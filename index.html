@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>英語テスト形式トレーニング</title>
+<!-- 開発メモ: Versant English Placement Test のパートB/C/D/F/G/H形式を練習するテスト版。UI上には商標名を出さない。 -->
+<style>
+:root{--navy:#1f3a5f;--navy2:#2d4f7c;--bg:#eef1f6;--card:#fff;--ink:#1c2736;--mute:#6b778a;--line:#d9dfe8;--acc:#e8892b;--ok:#1f9d63;--ng:#d6453d;--blue:#2a6fd6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:16px;line-height:1.55}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;background:#f7f9fc;box-shadow:0 0 24px rgba(0,0,0,.08);display:flex;flex-direction:column}
+header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:max(12px,env(safe-area-inset-top))}
+header .t{font-weight:700;font-size:16px}
+header .sub{font-size:12px;opacity:.8}
+#quit{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 12px;font-size:14px;min-height:36px}
+#timerbox{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px}
+#bar{height:10px;background:#e3e8f0;border-radius:6px;overflow:hidden}
+#fill{display:block;height:100%;width:100%;background:var(--acc);border-radius:6px}
+#tlabel{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-top:4px}
+#tlabel b{color:var(--ink)}
+main{padding:16px;flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+h1{font-size:22px;margin:4px 0 4px;color:var(--navy)}
+h2{font-size:18px;margin:0 0 6px;color:var(--navy)}
+h3{font-size:15px;margin:12px 0 4px;color:var(--navy)}
+p{margin:6px 0}
+.mute{color:var(--mute);font-size:13px}
+.rule{background:#fff6ea;border:1px solid #f3d3a8;border-radius:12px;padding:12px 14px;font-size:14px}
+.rule b{color:#b3600c}
+.btn{display:block;width:100%;min-height:52px;border:0;border-radius:12px;background:var(--navy);color:#fff;font-size:17px;font-weight:700;padding:12px 16px;cursor:pointer;margin-top:10px;text-align:center}
+.btn.acc{background:var(--acc)}
+.btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+.btn.small{min-height:48px;font-size:15px}
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.5}
+.part{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px;width:100%;text-align:left;min-height:64px;cursor:pointer;font:inherit;color:inherit}
+.part .ltr{flex:0 0 38px;height:38px;border-radius:10px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+.part .b{flex:1}
+.part .b strong{display:block;font-size:16px;color:var(--navy)}
+.part .b span{font-size:13px;color:var(--mute);display:block;line-height:1.4}
+.part .sc{font-size:12px;color:var(--mute);text-align:right;white-space:nowrap}
+.part .sc b{display:block;font-size:17px;color:var(--navy)}
+.big{font-size:22px;line-height:1.6;font-weight:600}
+.status{text-align:center;font-size:18px;font-weight:700;color:var(--navy);padding:24px 8px}
+.pulse{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--ng);margin-right:8px;animation:p 1s infinite}
+@keyframes p{50%{opacity:.25}}
+input.txt,textarea.txt{width:100%;font-size:18px;padding:12px;border:2px solid var(--navy2);border-radius:10px;background:#fff;color:var(--ink);font-family:inherit}
+textarea.txt{min-height:180px;resize:vertical}
+input.gap{width:9em;max-width:60%;display:inline-block;font-size:20px;padding:6px 8px;border:none;border-bottom:3px solid var(--acc);background:#fff7ec;text-align:center;border-radius:6px 6px 0 0;font-family:inherit}
+.res .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.badge{font-size:13px;font-weight:700;border-radius:20px;padding:2px 12px;color:#fff;background:var(--mute);white-space:nowrap}
+.badge.ok{background:var(--ok)}.badge.half{background:var(--acc)}.badge.ng{background:var(--ng)}
+.kv{font-size:14px;margin:4px 0;word-break:break-word}
+.kv i{font-style:normal;color:var(--mute);font-size:12px;display:block}
+.miss{color:var(--ng);font-weight:700;text-decoration:underline}
+.extra{color:var(--blue);font-weight:700;text-decoration:line-through}
+.score{font-size:42px;font-weight:800;color:var(--navy);line-height:1.1}
+.audio{width:100%;margin-top:6px}
+.cols{display:grid;grid-template-columns:1fr;gap:8px}
+.pbox{background:#f3f6fb;border-radius:8px;padding:10px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+label.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 4px;min-height:44px;font-size:15px}
+label.chk input{width:22px;height:22px;flex:0 0 22px;margin-top:2px;accent-color:var(--navy)}
+.sj{display:flex;gap:8px;margin-top:8px}
+.sj button{flex:1;min-height:44px;border-radius:10px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:15px;font-weight:700}
+select{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);min-height:44px;background:#fff}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header><div><div class="t" id="ttl">英語テスト形式トレーニング</div><div class="sub" id="sub"></div></div><button id="quit" hidden>中止</button></header>
+  <div id="timerbox" hidden><div id="bar"><i id="fill"></i></div><div id="tlabel"><span id="tl">&nbsp;</span><b id="tr"></b></div></div>
+  <main id="stage"></main>
+</div>
+<script src="items.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var stage=$('stage');
+var PT={
+ B:{title:'聞いてそのまま言う',kind:'speak',grace:6,limit:15,short:'英文を1回だけ聞いて、そっくり言う。',desc:'英語の文が1回だけ流れます。聞いたとおりに、すぐ繰り返して言ってください。6秒以内に話し始めないと次へ進みます。'},
+ C:{title:'3つの句を並べ替えて言う',kind:'speak',grace:8,limit:15,short:'バラバラの3つの句を聞いて、1つの文にして言う。',desc:'3つの句が順番バラバラに流れます。正しい語順の1文にして言ってください。8秒以内に話し始めないと次へ進みます。'},
+ D:{title:'会話を聞いて質問に答える',kind:'speak',grace:8,limit:15,short:'短い会話を聞き、質問に2〜5語で答える。',desc:'2人の短い会話と質問が流れます。完全な文でなくてOK。短く、すぐ答えてください。8秒以内に話し始めないと次へ進みます。'},
+ F:{title:'空欄に入る1語を書く',kind:'read',limit:25,short:'空欄に合う英単語を1語だけ入力する。',desc:'文の空欄に入る自然な英単語を1語だけ入力します。スペースは入力できません。Enterで確定。制限は25秒です。'},
+ G:{title:'聞こえた文を書き取る',kind:'listen',limit:25,short:'英文を1回だけ聞いて、そのままタイピングする。',desc:'英文が1回だけ流れます。聞こえた文をそのまま入力してください（大文字・句読点も見ます）。音声のあと25秒です。'},
+ H:{title:'短い話を覚えて書き直す',kind:'write',limit:90,short:'短い話を30秒読み、隠れたあと90秒で詳しく書く。',desc:'短い話が30秒だけ表示され、消えます。そのあと90秒で、覚えている内容をできるだけ詳しく英語で書いてください（人名・数字・理由を落とさない）。'}
+};
+var ORDER=['B','C','D','F','G','H'];
+var DRILL_N={B:5,C:5,D:5,F:5,G:5,H:2};
+var QUICK=[['B',1],['C',1],['D',1],['F',1],['G',1],['H',1]];
+var MOCK=[['B',16],['C',10],['D',12],['F',20],['G',16],['H',3]];
+
+/* ---------- storage ---------- */
+var PK='etp_progress_v1',SK='etp_settings_v1';
+function jget(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v||d}catch(e){return d}}
+function jset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var settings=jget(SK,{rate:1.0});
+var progress=jget(PK,{});
+
+/* ---------- utils ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function norm(s){return String(s||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9'\s]/g,' ').split(/\s+/).filter(Boolean)}
+function diff(a,b){var n=a.length,m=b.length,i,j,d=[];for(i=0;i<=n;i++){d.push(new Array(m+1).fill(0))}
+ for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+ var out=[];i=0;j=0;while(i<n&&j<m){if(a[i]===b[j]){out.push(['=',a[i]]);i++;j++}else if(d[i+1][j]>=d[i][j+1]){out.push(['-',a[i]]);i++}else{out.push(['+',b[j]]);j++}}
+ while(i<n)out.push(['-',a[i++]]);while(j<m)out.push(['+',b[j++]]);return out}
+function diffHtml(ops){return ops.map(function(o){return o[0]==='='?esc(o[1]):o[0]==='-'?'<span class="miss">'+esc(o[1])+'</span>':'<span class="extra">'+esc(o[1])+'</span>'}).join(' ')}
+function rateOf(ops,refLen){if(!refLen)return 0;var c=0;ops.forEach(function(o){if(o[0]==='=')c++});return c/refLen}
+function lev(a,b){var d=[],i,j;for(i=0;i<=a.length;i++){d[i]=[i]}for(j=0;j<=b.length;j++)d[0][j]=j;
+ for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+/* ---------- speech synthesis ---------- */
+var HAS_TTS=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window);
+var pool=[];
+var NOVELTY=/\b(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Junior|Ralph|Fred|Kathy|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley)\b/i;
+var PREF=['Samantha','Daniel','Karen','Moira','Tessa','Rishi','Aman','Tara','Google US English','Google UK English Female','Google UK English Male','Microsoft Aria Online (Natural)','Microsoft Jenny Online (Natural)','Microsoft Guy Online (Natural)','Microsoft Ryan Online (Natural)','Microsoft Sonia Online (Natural)','Alex','Ava','Allison','Susan','Tom','Zoe','Evan','Nathan','Oliver','Serena','Kate','Stephanie','Lee','Matilda'];
+var MALE=/Daniel|Rishi|Aman|Alex\b|Tom\b|Evan|Nathan|Oliver|Lee\b|Male|Guy|Ryan/i;
+function prefRank(v){var n=v.name.toLowerCase(),best=-1;for(var i=0;i<PREF.length;i++){if(n.indexOf(PREF[i].toLowerCase())>=0){best=i;break}}
+ if(best<0)return -1;return best*2+(/enhanced|premium/i.test(v.name)?0:1)}
+function loadVoices(){
+ if(!HAS_TTS)return;
+ var all=speechSynthesis.getVoices()||[];
+ var en=all.filter(function(v){return /^en[-_]/i.test(v.lang)&&!NOVELTY.test(v.name)});
+ var seen={};en=en.filter(function(v){if(seen[v.name])return false;seen[v.name]=1;return true});
+ var ranked=en.map(function(v){return{v:v,r:prefRank(v)}}).filter(function(o){return o.r>=0}).sort(function(a,b){return a.r-b.r}).map(function(o){return o.v});
+ if(!ranked.length){var us=en.filter(function(v){return /^en[-_](US|GB)/i.test(v.lang)});ranked=us.length?us:en}
+ var f=null,m=null;ranked.forEach(function(v){if(MALE.test(v.name)){if(!m)m=v}else if(!f)f=v});
+ pool=(f&&m)?[f,m].concat(ranked.filter(function(v){return v!==f&&v!==m})):ranked;
+ var el=$('voiceinfo');if(el)el.textContent=pool.length?('英語音声 '+pool.length+' 種を検出: '+pool.slice(0,4).map(function(v){return v.name}).join(', ')):'英語音声が見つかりません（端末の設定を確認）';
+}
+if(HAS_TTS){loadVoices();try{speechSynthesis.addEventListener('voiceschanged',loadVoices)}catch(e){speechSynthesis.onvoiceschanged=loadVoices}}
+function voiceFor(i){return pool.length?pool[((i%pool.length)+pool.length)%pool.length]:null}
+var unlocked=false;
+function unlock(){if(unlocked||!HAS_TTS)return;unlocked=true;try{var u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+['pointerdown','touchend','click'].forEach(function(ev){document.addEventListener(ev,unlock,{passive:true})});
+function speak(text,voice,pitch){
+ return new Promise(function(res){
+  if(!HAS_TTS){res();return}
+  var u=new SpeechSynthesisUtterance(text);
+  if(voice){u.voice=voice;u.lang=voice.lang}else u.lang='en-US';
+  u.rate=settings.rate||1;if(pitch)u.pitch=pitch;
+  var fin=false,to;
+  function end(){if(fin)return;fin=true;clearTimeout(to);res()}
+  u.onend=end;u.onerror=end;
+  to=setTimeout(end,4000+text.length*130/(u.rate));
+  try{speechSynthesis.speak(u)}catch(e){end()}
+ });
+}
+
+/* ---------- mic / recognition ---------- */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var HAS_REC=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+var micStream=null,micTried=false;
+async function ensureMic(){
+ if(micStream||micTried||!HAS_REC)return;
+ micTried=true;
+ try{micStream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){micStream=null}
+}
+function releaseMic(){if(micStream){try{micStream.getTracks().forEach(function(t){t.stop()})}catch(e){}}micStream=null;micTried=false}
+function startVAD(cb){
+ try{
+  var AC=window.AudioContext||window.webkitAudioContext;var ac=new AC();var src=ac.createMediaStreamSource(micStream);
+  var an=ac.createAnalyser();an.fftSize=1024;src.connect(an);var buf=new Uint8Array(an.fftSize);var hits=0;var t0=Date.now();
+  var t=setInterval(function(){
+   if(Date.now()-t0<350)return;
+   an.getByteTimeDomainData(buf);var s=0;for(var i=0;i<buf.length;i++){var d=(buf[i]-128)/128;s+=d*d}
+   var rms=Math.sqrt(s/buf.length);
+   if(rms>0.05){if(++hits>=3)cb()}else hits=0;
+  },50);
+  return function(){clearInterval(t);try{src.disconnect();ac.close()}catch(e){}};
+ }catch(e){return function(){}}
+}
+
+/* ---------- timer ---------- */
+var tm=null;
+function showTimer(on){$('timerbox').hidden=!on}
+function setTL(l,r){$('tl').textContent=l||' ';$('tr').textContent=r||''}
+function runTimer(sec,onEnd,label){
+ stopTimer();showTimer(true);setTL(label||'',Math.ceil(sec)+'秒');
+ var start=performance.now();$('fill').style.width='100%';
+ var iv=setInterval(function(){
+  var left=Math.max(0,sec-(performance.now()-start)/1000);
+  $('fill').style.width=(left/sec*100)+'%';$('tr').textContent=Math.ceil(left)+'秒';
+  if(left<=0){stopTimer();onEnd()}
+ },100);
+ tm={iv:iv};
+}
+function stopTimer(){if(tm){clearInterval(tm.iv);tm=null}}
+
+/* ---------- session control ---------- */
+var gen=0,onAbort=null,sess=null;
+function abort(){
+ gen++;stopTimer();showTimer(false);
+ if(onAbort){try{onAbort()}catch(e){}onAbort=null}
+ if(HAS_TTS){try{speechSynthesis.cancel()}catch(e){}}
+ releaseMic();
+}
+function setHead(sub){$('sub').textContent=sub||'';$('quit').hidden=!sub}
+$('quit').onclick=function(){if(confirm('中止してホームに戻りますか？（結果は保存されません）')){abort();home()}};
+
+function build(part,n){
+ var a=shuffle(window.ITEMS[part]).slice(0,n);
+ if(part==='B'||part==='G')a.sort(function(x,y){return x.words-y.words});
+ return a;
+}
+
+/* ---------- screens ---------- */
+function home(){
+ setHead('');showTimer(false);
+ var h='<h1>英語テスト形式トレーニング</h1><p class="mute">聞く・話す・読む・書くの短い問題を、本番に近いタイマーで繰り返し練習します。</p>';
+ h+='<div class="rule"><b>本番ルール</b><br>・音声は<b>1回しか聞けません</b>（再生ボタンはありません）<br>・話す問題は<b>数秒以内に話し始める</b>こと。遅いと次へ進みます<br>・戻れません。復習は終わったあとにまとめて</div>';
+ if(!HAS_TTS)h+='<div class="card" style="margin-top:12px;color:var(--ng)">この端末・ブラウザは音声読み上げに対応していません。聞き取り系の問題は使えません。</div>';
+ h+='<button class="btn acc" id="quick" style="margin-top:14px">クイック確認（各パート1問・約3分）</button>';
+ h+='<h3 style="margin-top:18px">パート別ドリル</h3>';
+ ORDER.forEach(function(p){
+  var pr=progress[p]||{};
+  h+='<button class="part" data-p="'+p+'"><div class="ltr">'+p+'</div><div class="b"><strong>'+PT[p].title+'</strong><span>'+PT[p].short+'</span></div><div class="sc">'+(pr.count?'<b>'+Math.round(pr.last*100)+'%</b>'+pr.count+'回':'未挑戦')+'</div></button>';
+ });
+ var mk=progress.mock||{};
+ h+='<h3 style="margin-top:18px">模試モード</h3><button class="btn acc" id="mock">模試を始める（全6パート・約25分）</button><p class="mute">'+(mk.count?'前回 '+Math.round(mk.last*100)+'%／'+mk.count+'回':'まだ受けていません')+'　順番: B16問→C10問→D12問→F20問→G16問→H3問</p>';
+ h+='<h3 style="margin-top:18px">設定</h3><div class="card"><label>音声の速さ　<select id="rate"><option value="0.9">ゆっくり (0.9)</option><option value="1">ふつう (1.0)</option><option value="1.1">はやい (1.1)</option></select></label><p class="mute" id="voiceinfo"></p><p class="mute">録音・音声認識はスマホの許可が必要です。使えない場合は「言えた」ボタンで進められます。</p></div>';
+ stage.innerHTML=h;
+ $('rate').value=String(settings.rate||1);
+ $('rate').onchange=function(){settings.rate=parseFloat(this.value);jset(SK,settings)};
+ Array.prototype.forEach.call(stage.querySelectorAll('.part'),function(b){b.onclick=function(){runSession([[b.getAttribute('data-p'),DRILL_N[b.getAttribute('data-p')]]],'drill')}});
+ $('mock').onclick=function(){runSession(MOCK,'mock')};
+ $('quick').onclick=function(){runSession(QUICK,'mock')};
+ loadVoices();
+}
+
+function waitTap(html,label,cls){
+ return new Promise(function(res){
+  stage.innerHTML=html+'<button class="btn '+(cls||'acc')+'" id="go">'+label+'</button>';
+  $('go').onclick=function(){res()};
+ });
+}
+
+async function runSession(plan,mode){
+ abort();var my=++gen;
+ sess={mode:mode,results:[],plan:plan};
+ var total=plan.reduce(function(s,x){return s+x[1]},0),done=0;
+ for(var pi=0;pi<plan.length;pi++){
+  var part=plan[pi][0],n=plan[pi][1];
+  var items=build(part,n);n=items.length;
+  setHead(PT[part].title);
+  var micNote=PT[part].kind==='speak'?'<p class="mute">'+(HAS_REC?'マイクの使用許可を求められたら「許可」を押してください（録音は任意です）。':'この端末では録音できません。話したあとに「言えた」ボタンで進みます。')+'</p>':'';
+  await waitTap('<div class="card"><h2>パート'+part+'：'+PT[part].title+'</h2><p>'+PT[part].desc+'</p><p class="mute">全'+n+'問'+(mode==='mock'?'（模試 '+(pi+1)+'/'+plan.length+'）':'')+'　各問は「▶ 開始」を押すと始まります。</p>'+micNote+'</div><div class="rule"><b>本番ルール</b>：音声は1回だけ。戻れません。</div>','はじめる');
+  if(my!==gen)return;
+  unlock();
+  if(PT[part].kind==='speak'){await ensureMic();if(my!==gen)return}
+  for(var i=0;i<n;i++){
+   setHead(PT[part].title+'　'+(i+1)+'/'+n+(mode==='mock'?'　（全体 '+(done+1)+'/'+total+'）':''));
+   var r=await runItem(part,items[i],done,my);
+   if(my!==gen)return;
+   sess.results.push(r);done++;
+  }
+  if(PT[part].kind==='speak'&&plan[pi+1]&&PT[plan[pi+1][0]].kind!=='speak')releaseMic();
+ }
+ releaseMic();showTimer(false);
+ results();
+}
+
+function runItem(part,item,idx,my){
+ if(part==='B'||part==='C'||part==='D')return runSpeak(part,item,idx,my);
+ if(part==='F')return runF(item,my);
+ if(part==='G')return runG(item,idx,my);
+ return runH(item,my);
+}
+
+/* ---------- speaking parts ---------- */
+async function runSpeak(part,item,idx,my){
+ var tip={B:'聞こえた英文をそのまま繰り返します。',C:'3つの句を聞いて、正しい語順の1文にして言います。',D:'会話と質問を聞いて、短く答えます。'}[part];
+ await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>'+tip+'</p><p class="mute">音声は1回だけです。</p></div>','▶ 開始');
+ if(my!==gen)return null;
+ stage.innerHTML='<div class="status">🎧 聞いています…</div>';
+ showTimer(false);
+ var v0=voiceFor(idx),v1=voiceFor(idx+1);
+ if(part==='B'){await speak(item.text,v0)}
+ else if(part==='C'){for(var k=0;k<item.chunks.length;k++){if(my!==gen)return null;await speak(item.chunks[k],v0);await sleep(500)}}
+ else{
+  var vw=voiceFor(0),vm=pool.length>1?voiceFor(1):vw;
+  var same=vw===vm;
+  for(var t=0;t<item.turns.length;t++){if(my!==gen)return null;var T=item.turns[t];await speak(T.text,T.spk==='W'?vw:vm,same?(T.spk==='W'?1.25:0.75):0);await sleep(300)}
+  if(my!==gen)return null;
+  await speak(item.question,voiceFor(2),0);
+ }
+ if(my!==gen)return null;
+ var a=await answerPhase(PT[part].grace,PT[part].limit,my);
+ if(my!==gen)return null;
+ return judgeSpeak(part,item,a);
+}
+
+function answerPhase(grace,limit,my){
+ return new Promise(function(resolve){
+  var t0=performance.now(),startedAt=null,done=false,rec=null,mr=null,chunks=[],text='',stopVAD=null,giv=null;
+  stage.innerHTML='<div class="status"><span class="pulse"></span>話してください</div><div class="card" id="gmsg" style="text-align:center"></div><button class="btn" id="done">言えた（次へ）</button><button class="btn ghost small" id="started">話し始めた（手動）</button>';
+  function markStart(){if(startedAt==null){startedAt=(performance.now()-t0)/1000;var b=$('started');if(b)b.hidden=true}}
+  function cleanup(){clearInterval(giv);stopTimer();if(stopVAD){stopVAD();stopVAD=null}}
+  async function finish(){
+   if(done)return;done=true;cleanup();onAbort=null;
+   stage.innerHTML='<div class="status">…</div>';
+   if(rec){try{rec.stop()}catch(e){}await sleep(500)}
+   var url=null;
+   if(mr&&mr.state!=='inactive'){await new Promise(function(r){mr.onstop=r;try{mr.stop()}catch(e){r()}});}
+   if(mr&&chunks.length){try{url=URL.createObjectURL(new Blob(chunks,{type:mr.mimeType||'audio/webm'}))}catch(e){}}
+   resolve({text:text.trim(),startSec:startedAt,audioUrl:url,noStart:startedAt==null});
+  }
+  onAbort=function(){done=true;cleanup();if(rec){try{rec.abort()}catch(e){}}if(mr&&mr.state!=='inactive'){try{mr.stop()}catch(e){}}};
+  if(micStream){
+   try{mr=new MediaRecorder(micStream);mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};mr.start()}catch(e){mr=null}
+   stopVAD=startVAD(markStart);
+  }
+  if(SR){
+   try{rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=true;
+    rec.onspeechstart=markStart;
+    rec.onresult=function(e){markStart();var s='';for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript+' ';text=s};
+    rec.onerror=function(){};rec.start()}catch(e){rec=null}
+  }
+  $('done').onclick=function(){markStart();finish()};
+  $('started').onclick=function(){markStart()};
+  runTimer(limit,finish,'回答時間');
+  giv=setInterval(function(){
+   var m=$('gmsg');if(!m)return;
+   if(startedAt==null){var left=grace-(performance.now()-t0)/1000;m.innerHTML='<b style="font-size:20px;color:var(--ng)">あと '+Math.max(0,Math.ceil(left))+' 秒以内に話し始めて</b>';if(left<=0){finish()}}
+   else m.innerHTML='<b style="color:var(--ok)">話しています… 言い終えたら「言えた」</b>'+(SR&&text?'<div class="mute" style="margin-top:6px">'+esc(text)+'</div>':'');
+  },100);
+ });
+}
+
+function judgeSpeak(part,item,a){
+ var r={part:part,item:item,answer:a.text,startSec:a.startSec,audioUrl:a.audioUrl,judge:'unknown',note:''};
+ var hyp=norm(a.text);
+ if(a.noStart){r.judge='ng';r.note='時間切れ（話し始めなかった）';return r}
+ if(!hyp.length){r.judge='unknown';r.note='音声認識の結果なし。録音を聞いて自己判定してください。';return r}
+ if(part==='B'){var ref=norm(item.text),ops=diff(ref,hyp);r.rate=rateOf(ops,ref.length);r.ops=ops;r.judge=r.rate>=0.8?'ok':r.rate>=0.5?'half':'ng'}
+ else if(part==='C'){var ref2=norm(item.answer),ops2=diff(ref2,hyp);r.rate=rateOf(ops2,ref2.length);r.ops=ops2;r.judge=(ref2.join(' ')===hyp.join(' '))?'ok':r.rate>=0.8?'half':'ng'}
+ else{var t=' '+hyp.join(' ')+' ';var hit=item.accepted.some(function(x){return t.indexOf(' '+norm(x).join(' ')+' ')>=0});r.judge=hit?'ok':'ng'}
+ return r;
+}
+
+/* ---------- F ---------- */
+function runF(item,my){
+ return new Promise(function(resolve){
+  var parts=item.sentence.split('____');
+  stage.innerHTML='<div class="card"><p class="mute">空欄に入る英単語を1語（スペースなし）</p><div class="big">'+esc(parts[0])+'<input id="fin" class="gap" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">'+esc(parts[1]||'')+'</div></div><button class="btn" id="ok">決定（Enter）</button>';
+  var inp=$('fin'),fin=false;
+  function submit(){
+   if(fin)return;fin=true;stopTimer();onAbort=null;
+   var v=inp.value.trim().toLowerCase(),r={part:'F',item:item,answer:v,judge:'ng'};
+   if(v&&item.accepted.indexOf(v)>=0)r.judge='ok';
+   else if(v&&item.accepted.some(function(a){return lev(a,v)<=1}))r.judge='half';
+   resolve(r);
+  }
+  onAbort=function(){fin=true;stopTimer()};
+  inp.addEventListener('input',function(){var c=inp.value.replace(/\s+/g,'');if(c!==inp.value)inp.value=c});
+  inp.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Spacebar'){e.preventDefault()}else if(e.key==='Enter'){e.preventDefault();submit()}});
+  $('ok').onclick=submit;
+  runTimer(25,submit,'回答時間');
+  try{inp.focus()}catch(e){}
+ });
+}
+
+/* ---------- G ---------- */
+async function runG(item,idx,my){
+ await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>英文を1回だけ聞いて、そのまま入力します。</p><p class="mute">音声は1回だけです。</p></div>','▶ 開始');
+ if(my!==gen)return null;
+ stage.innerHTML='<div class="status">🎧 聞いています…</div>';showTimer(false);
+ await speak(item.text,voiceFor(idx*2+1));
+ if(my!==gen)return null;
+ return new Promise(function(resolve){
+  stage.innerHTML='<div class="card"><p class="mute">聞こえた文を入力</p><textarea id="gin" class="txt" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" style="min-height:90px"></textarea></div><button class="btn" id="ok">次へ（Enter）</button>';
+  var inp=$('gin'),fin=false;
+  function submit(){
+   if(fin)return;fin=true;stopTimer();onAbort=null;
+   var raw=inp.value.trim(),ref=norm(item.text),hyp=norm(raw),ops=diff(ref,hyp);
+   var rate=rateOf(ops,ref.length);
+   var r={part:'G',item:item,answer:raw,ops:ops,rate:rate,exact:raw===item.text,judge:rate>=1?'ok':rate>=0.7?'half':'ng'};
+   resolve(r);
+  }
+  onAbort=function(){fin=true;stopTimer()};
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit()}});
+  $('ok').onclick=submit;
+  runTimer(25,submit,'回答時間');
+  try{inp.focus()}catch(e){}
+ });
+}
+
+/* ---------- H ---------- */
+async function runH(item,my){
+ await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>短い話を30秒だけ表示します。消えたあと90秒で、できるだけ詳しく書いてください。</p></div>','▶ 開始');
+ if(my!==gen)return null;
+ await new Promise(function(res){
+  stage.innerHTML='<div class="card"><p class="mute">30秒で覚えてください（表示は消えます）</p><div class="big" style="font-size:19px">'+esc(item.passage)+'</div></div>';
+  onAbort=function(){stopTimer()};
+  runTimer(30,function(){onAbort=null;res()},'本文の表示');
+ });
+ if(my!==gen)return null;
+ return new Promise(function(resolve){
+  stage.innerHTML='<div class="card"><p class="mute">覚えている内容を英語で書いてください</p><textarea id="hin" class="txt" autocomplete="off" autocorrect="off" spellcheck="false"></textarea></div><button class="btn" id="ok">書き終えた（次へ）</button>';
+  var inp=$('hin'),fin=false;
+  function submit(){
+   if(fin)return;fin=true;stopTimer();onAbort=null;
+   resolve({part:'H',item:item,answer:inp.value.trim(),checks:item.key_points.map(function(){return false}),judge:'self'});
+  }
+  onAbort=function(){fin=true;stopTimer()};
+  $('ok').onclick=submit;
+  runTimer(90,submit,'記述時間');
+  try{inp.focus()}catch(e){}
+ });
+}
+
+/* ---------- results ---------- */
+function itemScore(r){
+ if(r.part==='H'){return r.checks.filter(Boolean).length/r.item.key_points.length}
+ if(r.judge==='ok')return 1;if(r.judge==='half')return .5;if(r.judge==='ng')return 0;return null;
+}
+function partPct(list){var s=0,n=0;list.forEach(function(r){var v=itemScore(r);if(v!=null){s+=v;n++}});return n?s/n:null}
+function persist(first){
+ var by={};sess.results.forEach(function(r){(by[r.part]=by[r.part]||[]).push(r)});
+ var all=partPct(sess.results);
+ Object.keys(by).forEach(function(p){
+  var v=partPct(by[p]);if(v==null)return;
+  var pr=progress[p]||{count:0,best:0,hist:[]};
+  if(first){pr.count=(pr.count||0)+1;pr.hist=(pr.hist||[]).concat([v]).slice(-10)}
+  else if(pr.hist&&pr.hist.length){pr.hist[pr.hist.length-1]=v}
+  pr.last=v;pr.best=Math.max(pr.best||0,v);progress[p]=pr;
+ });
+ if(sess.mode==='mock'&&sess.plan!==QUICK&&all!=null){var m=progress.mock||{count:0};if(first)m.count=(m.count||0)+1;m.last=all;progress.mock=m}
+ jset(PK,progress);
+}
+function badge(r){
+ if(r.part==='H')return '<span class="badge '+(itemScore(r)>=.7?'ok':itemScore(r)>=.4?'half':'ng')+'">'+r.checks.filter(Boolean).length+'/'+r.item.key_points.length+'</span>';
+ var m={ok:['ok','○ 正解'],half:['half','△ 惜しい'],ng:['ng','× 不正解'],unknown:['','自己判定']}[r.judge];
+ return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
+}
+function summaryHtml(){
+ var all=partPct(sess.results),h='';
+ h+='<div class="card" style="text-align:center"><div class="mute">'+(sess.mode==='mock'?'模試の結果':'セットの結果')+'</div><div class="score">'+(all==null?'—':Math.round(all*100)+'%')+'</div>';
+ if(sess.mode==='mock'){
+  h+='<div class="mute" style="margin-top:6px">';
+  ORDER.forEach(function(p){var l=sess.results.filter(function(r){return r.part===p});if(l.length){var v=partPct(l);h+=p+' '+(v==null?'—':Math.round(v*100)+'%')+'　'}});
+  h+='</div>';
+ }
+ var st=sess.results.filter(function(r){return typeof r.startSec==='number'});
+ if(st.length){var avg=st.reduce(function(s,r){return s+r.startSec},0)/st.length;h+='<div class="kv" style="margin-top:8px"><i>話し始めまでの平均</i>'+avg.toFixed(1)+' 秒（'+st.length+'問）</div>'}
+ var nk=sess.results.filter(function(r){return r.judge==='unknown'}).length;
+ if(nk)h+='<div class="mute">自己判定待ち '+nk+'問（下の○×ボタンで入力）</div>';
+ h+='</div>';return h;
+}
+function results(){
+ setHead('');showTimer(false);window.scrollTo(0,0);
+ persist(true);
+ var h='<h1>結果</h1><div id="sum">'+summaryHtml()+'</div>';
+ sess.results.forEach(function(r,i){h+=resultCard(r,i)});
+ h+='<button class="btn" id="again">もう一度</button><button class="btn ghost" id="tohome">ホームへ</button>';
+ stage.innerHTML=h;
+ $('again').onclick=function(){runSession(sess.plan,sess.mode)};
+ $('tohome').onclick=home;
+ Array.prototype.forEach.call(stage.querySelectorAll('[data-sj]'),function(b){b.onclick=function(){
+  var i=+b.getAttribute('data-i'),r=sess.results[i];r.judge=b.getAttribute('data-sj');
+  $('bd'+i).innerHTML=badge(r);$('sum').innerHTML=summaryHtml();persist(false);
+ }});
+ Array.prototype.forEach.call(stage.querySelectorAll('[data-chk]'),function(c){c.onchange=function(){
+  var i=+c.getAttribute('data-i'),k=+c.getAttribute('data-chk');sess.results[i].checks[k]=c.checked;
+  $('bd'+i).innerHTML=badge(sess.results[i]);$('sum').innerHTML=summaryHtml();persist(false);
+ }});
+}
+function resultCard(r,i){
+ var it=r.item,h='<div class="card res"><div class="hd"><strong>Q'+(i+1)+'（'+r.part+'）</strong><span id="bd'+i+'">'+badge(r)+'</span></div>';
+ var startTxt=(typeof r.startSec==='number')?r.startSec.toFixed(1)+' 秒':'—';
+ if(r.part==='B'){
+  h+=kv('正解の文',esc(it.text));
+  h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
+  if(r.ops)h+=kv('差分（赤＝抜け／青＝余分）　一致率 '+Math.round(r.rate*100)+'%',diffHtml(r.ops));
+  h+=kv('話し始めまで',startTxt);
+ }else if(r.part==='C'){
+  h+=kv('聞いた句（順番どおり）',esc(it.chunks.join(' / ')));
+  h+=kv('正解',esc(it.answer));
+  h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
+  if(r.ops)h+=kv('差分（赤＝抜け／青＝余分）',diffHtml(r.ops));
+  h+=kv('話し始めまで',startTxt);
+ }else if(r.part==='D'){
+  h+=kv('会話',it.turns.map(function(t){return esc(t.spk+': '+t.text)}).join('<br>')+'<br><b>Q: '+esc(it.question)+'</b>');
+  h+=kv('想定される答え',esc(it.accepted.slice(0,4).join(' / ')));
+  h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
+  h+=kv('話し始めまで',startTxt);
+ }else if(r.part==='F'){
+  h+=kv('問題',esc(it.sentence.replace('____','＿＿＿'))); 
+  h+=kv('あなたの答え',r.answer?esc(r.answer):'（無回答）');
+  h+=kv('正解の候補（先頭が最も自然）',esc(it.accepted.join(' / ')));
+  h+=kv('完成した文',esc(it.sentence.replace('____',it.accepted[0])));
+ }else if(r.part==='G'){
+  h+=kv('正解の文',esc(it.text));
+  h+=kv('あなたの回答',r.answer?esc(r.answer):'（無回答）');
+  h+=kv('差分（赤＝抜け／青＝余分）　単語一致率 '+Math.round(r.rate*100)+'%',diffHtml(r.ops));
+  h+=kv('大文字・句読点',r.exact?'完全一致':'違いがあります（正解の文と見比べてください）');
+ }else{
+  h+='<div class="kv"><i>覚えていたポイントにチェック（自己採点）</i>';
+  it.key_points.forEach(function(k,j){h+='<label class="chk"><input type="checkbox" data-i="'+i+'" data-chk="'+j+'"'+(r.checks[j]?' checked':'')+'><span>'+esc(k)+'</span></label>'});
+  h+='</div><div class="cols"><div><i class="mute">原文</i><div class="pbox">'+esc(it.passage)+'</div></div><div><i class="mute">あなたの文（'+(r.answer?r.answer.split(/\s+/).length:0)+'語）</i><div class="pbox">'+(r.answer?esc(r.answer):'（無回答）')+'</div></div></div>';
+ }
+ if(r.note)h+='<div class="mute">'+esc(r.note)+'</div>';
+ if(r.audioUrl)h+='<div class="kv"><i>あなたの録音</i><audio class="audio" controls src="'+r.audioUrl+'"></audio></div>';
+ if(r.judge==='unknown')h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">○ 言えた</button><button data-sj="half" data-i="'+i+'">△ 惜しい</button><button data-sj="ng" data-i="'+i+'">× 言えなかった</button></div>';
+ return h+'</div>';
+}
+function kv(k,v){return '<div class="kv"><i>'+k+'</i>'+v+'</div>'}
+
+/* ---------- boot ---------- */
+if(!window.ITEMS){stage.innerHTML='<div class="card">問題データ(items.js)を読み込めませんでした。</div>'}
+else home();
+})();
+</script>
+</body>
+</html>
