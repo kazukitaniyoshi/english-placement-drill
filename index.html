@@ -53,6 +53,7 @@ input.gap{width:9em;max-width:60%;display:inline-block;font-size:20px;padding:6p
 .badge.ok{background:var(--ok)}.badge.half{background:var(--acc)}.badge.ng{background:var(--ng)}
 .kv{font-size:14px;margin:4px 0;word-break:break-word}
 .kv i{font-style:normal;color:var(--mute);font-size:12px;display:block}
+.ja{color:var(--mute);font-size:13px;margin:2px 0 6px}
 .miss{color:var(--ng);font-weight:700;text-decoration:underline}
 .extra{color:var(--blue);font-weight:700;text-decoration:line-through}
 .score{font-size:42px;font-weight:800;color:var(--navy);line-height:1.1}
@@ -72,6 +73,11 @@ select{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line)
   <div id="timerbox" hidden><div id="bar"><i id="fill"></i></div><div id="tlabel"><span id="tl">&nbsp;</span><b id="tr"></b></div></div>
   <main id="stage"></main>
 </div>
+<script src="data/partBG.js"></script>
+<script src="data/partC.js"></script>
+<script src="data/partD.js"></script>
+<script src="data/partF.js"></script>
+<script src="data/partH.js"></script>
 <script src="items.js"></script>
 <script>
 (function(){
@@ -84,7 +90,7 @@ var PT={
  D:{title:'会話を聞いて質問に答える',kind:'speak',grace:8,limit:15,short:'短い会話を聞き、質問に2〜5語で答える。',desc:'2人の短い会話と質問が流れます。完全な文でなくてOK。短く、すぐ答えてください。8秒以内に話し始めないと次へ進みます。'},
  F:{title:'空欄に入る1語を書く',kind:'read',limit:25,short:'空欄に合う英単語を1語だけ入力する。',desc:'文の空欄に入る自然な英単語を1語だけ入力します。スペースは入力できません。Enterで確定。制限は25秒です。'},
  G:{title:'聞こえた文を書き取る',kind:'listen',limit:25,short:'英文を1回だけ聞いて、そのままタイピングする。',desc:'英文が1回だけ流れます。聞こえた文をそのまま入力してください（大文字・句読点も見ます）。音声のあと25秒です。'},
- H:{title:'短い話を覚えて書き直す',kind:'write',limit:90,short:'短い話を30秒読み、隠れたあと90秒で詳しく書く。',desc:'短い話が30秒だけ表示され、消えます。そのあと90秒で、覚えている内容をできるだけ詳しく英語で書いてください（人名・数字・理由を落とさない）。'}
+ H:{title:'短い話を覚えて書き直す',kind:'write',limit:90,short:'短い話を30秒読み、隠れたあと90秒で要点を書き直す。',desc:'短い話が30秒だけ表示され、消えます。そのあと90秒で、内容を自分の言葉で英語に書き直してください。一言一句同じでなくてOK。要点ごとに趣旨が合っていれば得点します。ただし人物・数字・理由は必ず入れてください（配点2倍）。'}
 };
 var ORDER=['B','C','D','F','G','H'];
 var DRILL_N={B:5,C:5,D:5,F:5,G:5,H:2};
@@ -217,7 +223,7 @@ function home(){
  h+='<h3 style="margin-top:18px">パート別ドリル</h3>';
  ORDER.forEach(function(p){
   var pr=progress[p]||{};
-  h+='<button class="part" data-p="'+p+'"><div class="ltr">'+p+'</div><div class="b"><strong>'+PT[p].title+'</strong><span>'+PT[p].short+'</span></div><div class="sc">'+(pr.count?'<b>'+Math.round(pr.last*100)+'%</b>'+pr.count+'回':'未挑戦')+'</div></button>';
+  h+='<button class="part" data-p="'+p+'"><div class="ltr">'+p+'</div><div class="b"><strong>'+PT[p].title+'</strong><span>'+PT[p].short+'（全'+window.ITEMS[p].length+'問）</span></div><div class="sc">'+(pr.count?'<b>'+Math.round(pr.last*100)+'%</b>'+pr.count+'回':'未挑戦')+'</div></button>';
  });
  var mk=progress.mock||{};
  h+='<h3 style="margin-top:18px">模試モード</h3><button class="btn acc" id="mock">模試を始める（全6パート・約25分）</button><p class="mute">'+(mk.count?'前回 '+Math.round(mk.last*100)+'%／'+mk.count+'回':'まだ受けていません')+'　順番: B16問→C10問→D12問→F20問→G16問→H3問</p>';
@@ -296,8 +302,8 @@ async function runSpeak(part,item,idx,my){
 function answerPhase(grace,limit,my){
  return new Promise(function(resolve){
   var t0=performance.now(),startedAt=null,done=false,rec=null,mr=null,chunks=[],text='',stopVAD=null,giv=null;
-  stage.innerHTML='<div class="status"><span class="pulse"></span>話してください</div><div class="card" id="gmsg" style="text-align:center"></div><button class="btn" id="done">言えた（次へ）</button><button class="btn ghost small" id="started">話し始めた（手動）</button>';
-  function markStart(){if(startedAt==null){startedAt=(performance.now()-t0)/1000;var b=$('started');if(b)b.hidden=true}}
+  stage.innerHTML='<div class="status"><span class="pulse"></span>話してください</div><div class="card" id="gmsg" style="text-align:center"></div><button class="btn" id="done">言えた（次へ）</button>';
+  function markStart(){if(startedAt==null)startedAt=(performance.now()-t0)/1000}
   function cleanup(){clearInterval(giv);stopTimer();if(stopVAD){stopVAD();stopVAD=null}}
   async function finish(){
    if(done)return;done=true;cleanup();onAbort=null;
@@ -320,7 +326,6 @@ function answerPhase(grace,limit,my){
     rec.onerror=function(){};rec.start()}catch(e){rec=null}
   }
   $('done').onclick=function(){markStart();finish()};
-  $('started').onclick=function(){markStart()};
   runTimer(limit,finish,'回答時間');
   giv=setInterval(function(){
    var m=$('gmsg');if(!m)return;
@@ -390,7 +395,7 @@ async function runG(item,idx,my){
 
 /* ---------- H ---------- */
 async function runH(item,my){
- await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>短い話を30秒だけ表示します。消えたあと90秒で、できるだけ詳しく書いてください。</p></div>','▶ 開始');
+ await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>短い話を30秒だけ表示します。消えたあと90秒で、自分の言葉で書き直してください。</p><p class="mute">一言一句でなくてOK。人物・数字・理由は必ず入れること。</p></div>','▶ 開始');
  if(my!==gen)return null;
  await new Promise(function(res){
   stage.innerHTML='<div class="card"><p class="mute">30秒で覚えてください（表示は消えます）</p><div class="big" style="font-size:19px">'+esc(item.passage)+'</div></div>';
@@ -403,7 +408,7 @@ async function runH(item,my){
   var inp=$('hin'),fin=false;
   function submit(){
    if(fin)return;fin=true;stopTimer();onAbort=null;
-   resolve({part:'H',item:item,answer:inp.value.trim(),checks:item.key_points.map(function(){return false}),judge:'self'});
+   var ans=inp.value.trim();resolve({part:'H',item:item,answer:ans,checks:gradeH(item,ans),judge:'self'});
   }
   onAbort=function(){fin=true;stopTimer()};
   $('ok').onclick=submit;
@@ -412,9 +417,36 @@ async function runH(item,my){
  });
 }
 
+/* H採点: 一言一句でなく、要点ごとのキーワード（同義語可）で趣旨を判定。人物・数字・理由は配点2倍 */
+var NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100,thousand:1000};
+function stem(w){
+ if(/^\d+$/.test(w)||w.length<=3)return w;
+ if(/ies$/.test(w))w=w.slice(0,-3)+'y';else if(/[^s]s$/.test(w))w=w.slice(0,-1);
+ if(w.length>5&&/ing$/.test(w))w=w.slice(0,-3);else if(w.length>4&&/ed$/.test(w))w=w.slice(0,-2);
+ if(w.length>3&&/e$/.test(w))w=w.slice(0,-1);
+ if(/([b-df-hj-np-tv-z])\1$/.test(w))w=w.slice(0,-1);
+ return w;
+}
+function hnorm(s){
+ var t=String(s||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(Boolean);
+ var out=[];
+ for(var i=0;i<t.length;i++){
+  var w=t[i];
+  if(NUMW.hasOwnProperty(w)){var n=NUMW[w];
+   if(n>=20&&n<100&&t[i+1]&&NUMW.hasOwnProperty(t[i+1])&&NUMW[t[i+1]]<10){n+=NUMW[t[i+1]];i++}
+   out.push(String(n));continue}
+  out.push(stem(w));
+ }
+ return out;
+}
+function hasSeq(hay,nd){if(!nd.length)return false;for(var i=0;i+nd.length<=hay.length;i++){var k=0;while(k<nd.length&&hay[i+k]===nd[k])k++;if(k===nd.length)return true}return false}
+function gradeH(item,ans){var a=hnorm(ans);return item.points.map(function(p){return p.kw.every(function(g){return g.some(function(alt){return hasSeq(a,hnorm(alt))})})})}
+function hW(p){return p.must?2:1}
+var MUSTJA={person:'人物',number:'数字',reason:'理由'};
+
 /* ---------- results ---------- */
 function itemScore(r){
- if(r.part==='H'){return r.checks.filter(Boolean).length/r.item.key_points.length}
+ if(r.part==='H'){var s=0,t=0;r.item.points.forEach(function(p,k){t+=hW(p);if(r.checks[k])s+=hW(p)});return t?s/t:0}
  if(r.judge==='ok')return 1;if(r.judge==='half')return .5;if(r.judge==='ng')return 0;return null;
 }
 function partPct(list){var s=0,n=0;list.forEach(function(r){var v=itemScore(r);if(v!=null){s+=v;n++}});return n?s/n:null}
@@ -432,7 +464,7 @@ function persist(first){
  jset(PK,progress);
 }
 function badge(r){
- if(r.part==='H')return '<span class="badge '+(itemScore(r)>=.7?'ok':itemScore(r)>=.4?'half':'ng')+'">'+r.checks.filter(Boolean).length+'/'+r.item.key_points.length+'</span>';
+ if(r.part==='H')return '<span class="badge '+(itemScore(r)>=.7?'ok':itemScore(r)>=.4?'half':'ng')+'">'+Math.round(itemScore(r)*100)+'点</span>';
  var m={ok:['ok','○ 正解'],half:['half','△ 惜しい'],ng:['ng','× 不正解'],unknown:['','自己判定']}[r.judge];
  return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }
@@ -472,35 +504,38 @@ function resultCard(r,i){
  var it=r.item,h='<div class="card res"><div class="hd"><strong>Q'+(i+1)+'（'+r.part+'）</strong><span id="bd'+i+'">'+badge(r)+'</span></div>';
  var startTxt=(typeof r.startSec==='number')?r.startSec.toFixed(1)+' 秒':'—';
  if(r.part==='B'){
-  h+=kv('正解の文',esc(it.text));
+  h+=kv('正解の文',esc(it.text)+ja(it.ja));
   h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
   if(r.ops)h+=kv('差分（赤＝抜け／青＝余分）　一致率 '+Math.round(r.rate*100)+'%',diffHtml(r.ops));
   h+=kv('話し始めまで',startTxt);
  }else if(r.part==='C'){
   h+=kv('聞いた句（順番どおり）',esc(it.chunks.join(' / ')));
-  h+=kv('正解',esc(it.answer));
+  h+=kv('正解',esc(it.answer)+ja(it.ja));
   h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
   if(r.ops)h+=kv('差分（赤＝抜け／青＝余分）',diffHtml(r.ops));
   h+=kv('話し始めまで',startTxt);
  }else if(r.part==='D'){
-  h+=kv('会話',it.turns.map(function(t){return esc(t.spk+': '+t.text)}).join('<br>')+'<br><b>Q: '+esc(it.question)+'</b>');
-  h+=kv('想定される答え',esc(it.accepted.slice(0,4).join(' / ')));
+  h+=kv('会話',it.turns.map(function(t){return esc(t.spk+': '+t.text)+ja(t.ja)}).join('')+'<b>Q: '+esc(it.question)+'</b>'+ja(it.qja));
+  h+=kv('想定される答え',esc(it.accepted.slice(0,4).join(' / '))+ja(it.aja));
   h+=kv('あなたの認識結果',r.answer?esc(r.answer):'（認識なし）');
   h+=kv('話し始めまで',startTxt);
  }else if(r.part==='F'){
   h+=kv('問題',esc(it.sentence.replace('____','＿＿＿'))); 
   h+=kv('あなたの答え',r.answer?esc(r.answer):'（無回答）');
   h+=kv('正解の候補（先頭が最も自然）',esc(it.accepted.join(' / ')));
-  h+=kv('完成した文',esc(it.sentence.replace('____',it.accepted[0])));
+  var full=it.sentence.replace('____',it.accepted[0]);full=full.charAt(0).toUpperCase()+full.slice(1);
+  h+=kv('完成した文',esc(full)+ja(it.ja));
  }else if(r.part==='G'){
-  h+=kv('正解の文',esc(it.text));
+  h+=kv('正解の文',esc(it.text)+ja(it.ja));
   h+=kv('あなたの回答',r.answer?esc(r.answer):'（無回答）');
   h+=kv('差分（赤＝抜け／青＝余分）　単語一致率 '+Math.round(r.rate*100)+'%',diffHtml(r.ops));
   h+=kv('大文字・句読点',r.exact?'完全一致':'違いがあります（正解の文と見比べてください）');
  }else{
-  h+='<div class="kv"><i>覚えていたポイントにチェック（自己採点）</i>';
-  it.key_points.forEach(function(k,j){h+='<label class="chk"><input type="checkbox" data-i="'+i+'" data-chk="'+j+'"'+(r.checks[j]?' checked':'')+'><span>'+esc(k)+'</span></label>'});
-  h+='</div><div class="cols"><div><i class="mute">原文</i><div class="pbox">'+esc(it.passage)+'</div></div><div><i class="mute">あなたの文（'+(r.answer?r.answer.split(/\s+/).length:0)+'語）</i><div class="pbox">'+(r.answer?esc(r.answer):'（無回答）')+'</div></div></div>';
+  var miss=it.points.filter(function(p,j){return p.must&&!r.checks[j]});
+  if(miss.length)h+='<div class="rule" style="margin:6px 0"><b>必須要素の抜け</b>：'+miss.map(function(p){return MUSTJA[p.must]+'（'+esc(p.ja)+'）'}).join('、')+'</div>';
+  h+='<div class="kv"><i>要点ごとの判定（自動・趣旨が合っていればOK。判定が違えばチェックで直せます）</i>';
+  it.points.forEach(function(p,j){h+='<label class="chk"><input type="checkbox" data-i="'+i+'" data-chk="'+j+'"'+(r.checks[j]?' checked':'')+'><span>'+(p.must?'<b style="color:#b3600c">['+MUSTJA[p.must]+']</b> ':'')+esc(p.en)+'<br><span class="mute">'+esc(p.ja)+'</span></span></label>'});
+  h+='</div><div class="cols"><div><i class="mute">原文</i><div class="pbox">'+esc(it.passage)+'</div><div class="ja">'+esc(it.ja)+'</div></div><div><i class="mute">あなたの文（'+(r.answer?r.answer.split(/\s+/).length:0)+'語）</i><div class="pbox">'+(r.answer?esc(r.answer):'（無回答）')+'</div></div></div>';
  }
  if(r.note)h+='<div class="mute">'+esc(r.note)+'</div>';
  if(r.audioUrl)h+='<div class="kv"><i>あなたの録音</i><audio class="audio" controls src="'+r.audioUrl+'"></audio></div>';
@@ -508,6 +543,7 @@ function resultCard(r,i){
  return h+'</div>';
 }
 function kv(k,v){return '<div class="kv"><i>'+k+'</i>'+v+'</div>'}
+function ja(t){return t?'<div class="ja">'+esc(t)+'</div>':''}
 
 /* ---------- boot ---------- */
 if(!window.ITEMS){stage.innerHTML='<div class="card">問題データ(items.js)を読み込めませんでした。</div>'}
