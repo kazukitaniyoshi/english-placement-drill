@@ -109,7 +109,9 @@ var HK='etp_seen_v1';
 var AI_URL='https://english-drill-explain.kazuki-taniyoshi.workers.dev/explain';
 var AK='etp_ai_pass';
 function aiPass(){try{return localStorage.getItem(AK)||''}catch(e){return ''}}
-function setAiPass(v){try{if(v)localStorage.setItem(AK,v);else localStorage.removeItem(AK)}catch(e){}}
+// 全角→半角、空白・改行の除去（スマホの日本語入力やコピー時の混入対策）
+function cleanPass(v){return String(v||'').normalize('NFKC').replace(/\s+/g,'')}
+function setAiPass(v){v=cleanPass(v);try{if(v)localStorage.setItem(AK,v);else localStorage.removeItem(AK)}catch(e){}}
 var seenLog=jget(HK,{});
 function markSeen(part,id){var a=(seenLog[part]||[]).filter(function(x){return x!==id});a.push(id);seenLog[part]=a;jset(HK,seenLog)}
 
@@ -553,6 +555,7 @@ function results(){
   $('bd'+i).innerHTML=badge(r);$('sum').innerHTML=summaryHtml();persist(false);
  }});
  Array.prototype.forEach.call(stage.querySelectorAll('[data-ai]'),function(b){b.onclick=function(){aiExplain(+b.getAttribute('data-ai'))}});
+ aiAuto();
  Array.prototype.forEach.call(stage.querySelectorAll('[data-chk]'),function(c){c.onchange=function(){
   var i=+c.getAttribute('data-i'),k=+c.getAttribute('data-chk');sess.results[i].checks[k]=c.checked;
   $('bd'+i).innerHTML=badge(sess.results[i]);$('sum').innerHTML=summaryHtml();persist(false);
@@ -625,14 +628,29 @@ async function aiExplain(i){
  try{
   var res=await fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json','X-Passcode':pass},body:JSON.stringify(aiPayload(sess.results[i]))});
   var j={};try{j=await res.json()}catch(e){}
-  if(res.ok&&j.text){box.innerHTML='<i>AIの解説</i><div class="pbox" style="white-space:pre-wrap">'+esc(j.text)+'</div>';return}
-  if(res.status===401){setAiPass('');msg='合言葉が違うようです。もう一度入力してください。'}
-  else if(j.error==='daily_limit')msg='今日の解説の上限に達しました。明日また使えます。';
-  else if(j.error==='locked')msg='合言葉の間違いが続いたため、今日は停止しています。';
+  if(res.ok&&j.text){box.innerHTML='<i>AIの解説</i><div class="pbox" style="white-space:pre-wrap">'+esc(j.text)+'</div>';return 'ok'}
+  var st='err';
+  if(res.status===401){setAiPass('');msg='合言葉が違うようです。もう一度入力してください。';st='stop'}
+  else if(j.error==='daily_limit'){msg='今日の解説の上限に達しました。明日また使えます。';st='stop'}
+  else if(j.error==='locked'){msg='合言葉の間違いが続いたため、今日は停止しています。';st='stop'}
   else msg='解説を取得できませんでした。少し待ってからもう一度お試しください。';
- }catch(e){msg='通信できませんでした。電波の良い場所でもう一度お試しください。'}
+ }catch(e){msg='通信できませんでした。電波の良い場所でもう一度お試しください。';st='err'}
  box.innerHTML='<p class="mute">'+esc(msg)+'</p><button class="btn ghost" data-ai="'+i+'">もう一度</button>';
  box.querySelector('[data-ai]').onclick=function(){aiExplain(i)};
+ return st;
+}
+/* 合言葉が保存済みなら、不正解・惜しい問題の解説を自動で取りにいく（3問ずつ並行） */
+function aiAuto(){
+ if(!AI_URL||!aiPass())return;
+ var mine=sess,q=[];
+ sess.results.forEach(function(r,i){var v=itemScore(r);if(v!=null&&v<1)q.push(i)});
+ var halted=false;
+ function next(){
+  if(halted||sess!==mine||!q.length)return;
+  var i=q.shift();
+  aiExplain(i).then(function(st){if(st==='stop')halted=true;next()});
+ }
+ for(var k=0;k<3;k++)next();
 }
 function kv(k,v){return '<div class="kv"><i>'+k+'</i>'+v+'</div>'}
 function ja(t){return t?'<div class="ja">'+esc(t)+'</div>':''}

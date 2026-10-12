@@ -5,7 +5,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 const ALLOWED_ORIGINS = ["https://kazukitaniyoshi.github.io"];
-const DAILY_LIMIT = 100; // 1日の解説回数の上限
+const DAILY_LIMIT = 300; // 1日の解説回数の上限（模試の不正解を自動解説しても足りる量）
 const FAIL_LIMIT = 20; // 1日の合言葉ミスの上限（超えたらその日は全停止）
 const MAX_BODY = 6000; // 受け付けるリクエストの最大バイト数
 const LIMITS = { question: 1500, correct: 800, answer: 1500 };
