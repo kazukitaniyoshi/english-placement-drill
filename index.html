@@ -103,11 +103,48 @@ function jget(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v||d}cat
 function jset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 var settings=jget(SK,{rate:1.0});
 var progress=jget(PK,{});
+/* 出題履歴: パートごとに、出した問題IDを古い順に並べたリスト */
+var HK='etp_seen_v1';
+var seenLog=jget(HK,{});
+function markSeen(part,id){var a=(seenLog[part]||[]).filter(function(x){return x!==id});a.push(id);seenLog[part]=a;jset(HK,seenLog)}
 
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 function norm(s){return String(s||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9'\s]/g,' ').split(/\s+/).filter(Boolean)}
+/* 採点用の正規化: 数字・表記ゆれをそろえる。opt.expand=短縮形を展開（話す問題用）、opt.poss=所有の's を外す */
+var ORDW={first:'1st',second:'2nd',third:'3rd',fourth:'4th',fifth:'5th',sixth:'6th',seventh:'7th',eighth:'8th',ninth:'9th',tenth:'10th'};
+var VARW={ok:'okay',neighbour:'neighbor',neighbours:'neighbors',cancelled:'canceled',colour:'color',favourite:'favorite',theatre:'theater',centre:'center'};
+var JOINW={'wi fi':'wifi','e mail':'email','back yard':'backyard','rest room':'restroom','lap top':'laptop','a c':'ac','air con':'aircon'};
+var BEW={he:1,she:1,it:1,that:1,there:1,what:1,where:1,who:1,how:1,here:1};
+function canon(s,opt){
+ opt=opt||{};
+ var t=norm(s).join(' ');
+ Object.keys(JOINW).forEach(function(k){t=(' '+t+' ').split(' '+k+' ').join(' '+JOINW[k]+' ').trim()});
+ var a=t.split(' ').filter(Boolean),o=[];
+ for(var i=0;i<a.length;i++){
+  var w=VARW[a[i]]||a[i];
+  if(w==="o'clock")continue;
+  if(opt.expand){
+   var m;
+   if(w==="i'm"){o.push('i','am');continue}
+   if(w==="can't"||w==='cannot'){o.push('can','not');continue}
+   if(w==="won't"){o.push('will','not');continue}
+   if(w==="let's"){o.push('let','us');continue}
+   if((m=w.match(/^(\w+)n't$/))){o.push(m[1],'not');continue}
+   if((m=w.match(/^(\w+)'(ve|ll|re|d)$/))){o.push(m[1],{ve:'have',ll:'will',re:'are',d:'would'}[m[2]]);continue}
+   if((m=w.match(/^(\w+)'s$/))&&BEW[m[1]]){o.push(m[1],/^(been|got|gotten)$/.test(a[i+1]||'')?'has':'is');continue}
+  }
+  if(opt.poss)w=w.replace(/'s$/,'').replace(/'$/,'');
+  if(NUMW.hasOwnProperty(w)){
+   var v=NUMW[w];
+   if(v>=20&&v<100&&v%10===0&&NUMW.hasOwnProperty(a[i+1]||'')&&NUMW[a[i+1]]>0&&NUMW[a[i+1]]<10){v+=NUMW[a[i+1]];i++}
+   o.push(String(v));continue}
+  if(ORDW[w]){o.push(ORDW[w]);continue}
+  o.push(w);
+ }
+ return o;
+}
 function diff(a,b){var n=a.length,m=b.length,i,j,d=[];for(i=0;i<=n;i++){d.push(new Array(m+1).fill(0))}
  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
  var out=[];i=0;j=0;while(i<n&&j<m){if(a[i]===b[j]){out.push(['=',a[i]]);i++;j++}else if(d[i+1][j]>=d[i][j+1]){out.push(['-',a[i]]);i++}else{out.push(['+',b[j]]);j++}}
@@ -208,7 +245,13 @@ function setHead(sub){$('sub').textContent=sub||'';$('quit').hidden=!sub}
 $('quit').onclick=function(){if(confirm('中止してホームに戻りますか？（結果は保存されません）')){abort();home()}};
 
 function build(part,n){
- var a=shuffle(window.ITEMS[part]).slice(0,n);
+ // まだ出ていない問題から優先して選び、足りなければ「出してから一番時間が経った問題」で補う
+ var pool=window.ITEMS[part],byId={};pool.forEach(function(it){byId[it.id]=it});
+ var log=(seenLog[part]||[]).filter(function(id){return byId[id]});
+ var seen={};log.forEach(function(id){seen[id]=1});
+ var a=shuffle(pool.filter(function(it){return !seen[it.id]})).slice(0,n);
+ var need=n-a.length;
+ if(need>0)a=a.concat(shuffle(log.slice(0,need*2)).slice(0,need).map(function(id){return byId[id]}));
  if(part==='B'||part==='G')a.sort(function(x,y){return x.words-y.words});
  return a;
 }
@@ -261,6 +304,7 @@ async function runSession(plan,mode){
    setHead(PT[part].title+'　'+(i+1)+'/'+n+(mode==='mock'?'　（全体 '+(done+1)+'/'+total+'）':''));
    var r=await runItem(part,items[i],done,my);
    if(my!==gen)return;
+   markSeen(part,items[i].id);
    sess.results.push(r);done++;
   }
   if(PT[part].kind==='speak'&&plan[pi+1]&&PT[plan[pi+1][0]].kind!=='speak')releaseMic();
@@ -308,7 +352,7 @@ function answerPhase(grace,limit,my){
   async function finish(){
    if(done)return;done=true;cleanup();onAbort=null;
    stage.innerHTML='<div class="status">…</div>';
-   if(rec){try{rec.stop()}catch(e){}await sleep(500)}
+   if(rec){await new Promise(function(r){var to=setTimeout(r,1500);rec.onend=function(){clearTimeout(to);r()};try{rec.stop()}catch(e){clearTimeout(to);r()}})}
    var url=null;
    if(mr&&mr.state!=='inactive'){await new Promise(function(r){mr.onstop=r;try{mr.stop()}catch(e){r()}});}
    if(mr&&chunks.length){try{url=URL.createObjectURL(new Blob(chunks,{type:mr.mimeType||'audio/webm'}))}catch(e){}}
@@ -340,9 +384,10 @@ function judgeSpeak(part,item,a){
  var hyp=norm(a.text);
  if(a.noStart){r.judge='ng';r.note='時間切れ（話し始めなかった）';return r}
  if(!hyp.length){r.judge='unknown';r.note='音声認識の結果なし。録音を聞いて自己判定してください。';return r}
- if(part==='B'){var ref=norm(item.text),ops=diff(ref,hyp);r.rate=rateOf(ops,ref.length);r.ops=ops;r.judge=r.rate>=0.8?'ok':r.rate>=0.5?'half':'ng'}
- else if(part==='C'){var ref2=norm(item.answer),ops2=diff(ref2,hyp);r.rate=rateOf(ops2,ref2.length);r.ops=ops2;r.judge=(ref2.join(' ')===hyp.join(' '))?'ok':r.rate>=0.8?'half':'ng'}
- else{var t=' '+hyp.join(' ')+' ';var hit=item.accepted.some(function(x){return t.indexOf(' '+norm(x).join(' ')+' ')>=0});r.judge=hit?'ok':'ng'}
+ var X={expand:true};hyp=canon(a.text,X);
+ if(part==='B'){var ref=canon(item.text,X),ops=diff(ref,hyp);r.rate=rateOf(ops,ref.length);r.ops=ops;r.judge=r.rate>=0.8?'ok':r.rate>=0.5?'half':'ng'}
+ else if(part==='C'){var ref2=canon(item.answer,X),ops2=diff(ref2,hyp);r.rate=rateOf(ops2,ref2.length);r.ops=ops2;r.judge=(ref2.join(' ')===hyp.join(' '))?'ok':r.rate>=0.8?'half':'ng'}
+ else{var P={expand:true,poss:true},t=' '+canon(a.text,P).join(' ')+' ';var hit=item.accepted.some(function(x){var k=canon(x,P);while(k.length>1&&/^(on|at|in|by|for|to|the|a|an)$/.test(k[0]))k=k.slice(1);k=k.join(' ');return k&&t.indexOf(' '+k+' ')>=0});r.judge=hit?'ok':'ng'}
  return r;
 }
 
@@ -355,8 +400,9 @@ function runF(item,my){
   function submit(){
    if(fin)return;fin=true;stopTimer();onAbort=null;
    var v=inp.value.trim().toLowerCase(),r={part:'F',item:item,answer:v,judge:'ng'};
-   if(v&&item.accepted.indexOf(v)>=0)r.judge='ok';
-   else if(v&&item.accepted.some(function(a){return lev(a,v)<=1}))r.judge='half';
+   var cv=canon(v).join(' '),acc=item.accepted.map(function(a){return canon(a).join(' ')});
+   if(cv&&acc.indexOf(cv)>=0)r.judge='ok';
+   else if(cv.length>=4&&acc.some(function(a){return a.length>=4&&lev(a,cv)<=1}))r.judge='half';
    resolve(r);
   }
   onAbort=function(){fin=true;stopTimer()};
@@ -380,9 +426,9 @@ async function runG(item,idx,my){
   var inp=$('gin'),fin=false;
   function submit(){
    if(fin)return;fin=true;stopTimer();onAbort=null;
-   var raw=inp.value.trim(),ref=norm(item.text),hyp=norm(raw),ops=diff(ref,hyp);
+   var raw=inp.value.trim(),ref=canon(item.text),hyp=canon(raw),ops=diff(ref,hyp);
    var rate=rateOf(ops,ref.length);
-   var r={part:'G',item:item,answer:raw,ops:ops,rate:rate,exact:raw===item.text,judge:rate>=1?'ok':rate>=0.7?'half':'ng'};
+   var r={part:'G',item:item,answer:raw,ops:ops,rate:rate,exact:raw.replace(/[’‘]/g,"'").replace(/\s+/g,' ')===item.text,judge:rate>=1?'ok':rate>=0.7?'half':'ng'};
    resolve(r);
   }
   onAbort=function(){fin=true;stopTimer()};
@@ -427,8 +473,12 @@ function stem(w){
  if(/([b-df-hj-np-tv-z])\1$/.test(w))w=w.slice(0,-1);
  return w;
 }
+var HNEG={dont:'do',doesnt:'does',didnt:'did',isnt:'is',arent:'are',wasnt:'was',werent:'were',hasnt:'has',havent:'have',hadnt:'had',couldnt:'could',wouldnt:'would',shouldnt:'should',cant:'can',cannot:'can',wont:'will'};
+var HORD={first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,seventh:7,eighth:8,ninth:9,tenth:10};
+var HIRR={found:'find',bought:'buy',lost:'lose',paid:'pay',gave:'give',given:'give',took:'take',taken:'take',left:'leave',came:'come',ran:'run',got:'get',brought:'bring',went:'go',gone:'go',told:'tell',said:'say',made:'make',felt:'feel',kept:'keep',sent:'send',thought:'think',broke:'break',broken:'break',fell:'fall',began:'begin',saw:'see',seen:'see',wrote:'write',ate:'eat',sold:'sell',caught:'catch',woke:'wake',froze:'freeze',frozen:'freeze',forgot:'forget',forgotten:'forget',met:'meet',sat:'sit',stood:'stand',spent:'spend',lent:'lend',won:'win',rang:'ring',flew:'fly',drove:'drive',rode:'ride',knew:'know',heard:'hear',slept:'sleep',taught:'teach'};
 function hnorm(s){
- var t=String(s||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(Boolean);
+ var t=String(s||'').toLowerCase().replace(/[’‘']/g,'').replace(/(\d)([a-z])/g,'$1 $2').replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(Boolean);
+ t=t.reduce(function(o,w){if(HNEG[w])o.push(HNEG[w],'not');else if(HORD[w])o.push(String(HORD[w]));else if(/^\d+(st|nd|rd|th)$/.test(w))o.push(w.replace(/\D/g,''));else o.push(HIRR[w]||w);return o},[]);
  var out=[];
  for(var i=0;i<t.length;i++){
   var w=t[i];
@@ -539,6 +589,7 @@ function resultCard(r,i){
  }
  if(r.note)h+='<div class="mute">'+esc(r.note)+'</div>';
  if(r.audioUrl)h+='<div class="kv"><i>あなたの録音</i><audio class="audio" controls src="'+r.audioUrl+'"></audio></div>';
+ if(r.part==='F'&&r.judge!=='ok'&&r.answer)h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">自分の答えも正しいので正解にする</button></div>';
  if(r.judge==='unknown')h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">○ 言えた</button><button data-sj="half" data-i="'+i+'">△ 惜しい</button><button data-sj="ng" data-i="'+i+'">× 言えなかった</button></div>';
  return h+'</div>';
 }

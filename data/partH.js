@@ -11,7 +11,7 @@ window.RAW.H = [
       { en: "he couldn't find his wallet when the bill came", ja: "伝票が来たとき財布が見つからなかった", kw: [["wallet", "purse", "money"], ["find", "found", "lost", "lose", "missing", "gone", "look for", "looked for", "search", "searched"]], must: null },
       { en: "he remembered he had it when he came in", ja: "店に入ったときは持っていたと覚えていた", kw: [["remember", "remembered", "recall", "recalled", "knew", "sure", "came in", "come in", "arrived"]], must: null },
       { en: "the waiter found it under the table", ja: "ウェイターがテーブルの下で見つけた", kw: [["waiter", "server", "staff", "waitress"], ["table", "floor", "under"]], must: "person" },
-      { en: "he left a big tip because he was thankful", ja: "感謝して多めのチップを置いた", kw: [["tip", "tipped"], ["thank", "thanked", "thankful", "thanks", "grateful", "happy", "glad"]], must: "reason" },
+      { en: "he left a big tip because he was thankful", ja: "感謝して多めのチップを置いた", kw: [["tip", "tipped"], ["thank", "thanked", "thankful", "thanks", "grateful", "happy", "glad", "appreciate", "appreciated", "appreciative", "gratitude"]], must: "reason" },
       { en: "the tip was 20 dollars", ja: "チップは20ドルだった", kw: [["20"]], must: "number" }
     ]
   },
@@ -21,9 +21,9 @@ window.RAW.H = [
     points: [
       { en: "Maria has a bakery in Boston", ja: "マリアはボストンでパン屋をしている", kw: [["maria"], ["bakery", "bread shop", "bakeshop", "bake", "baker", "bread"]], must: "person" },
       { en: "she gets up at 4 to make bread", ja: "パンを作るため4時に起きる", kw: [["4"]], must: "number" },
-      { en: "her oven broke last Monday", ja: "先週の月曜にオーブンが壊れた", kw: [["oven"], ["stop", "stopped", "broke", "broken", "break", "work", "worked", "problem", "trouble"]], must: null },
+      { en: "her oven broke last Monday", ja: "先週の月曜にオーブンが壊れた", kw: [["oven"], ["stop", "stopped", "broke", "broken", "break", "work", "worked", "problem", "trouble", "fail", "failed", "died", "dead"]], must: null },
       { en: "she called her brother Paul", ja: "兄（弟）のポールに電話した", kw: [["paul", "brother"]], must: "person" },
-      { en: "he fixed it in one hour", ja: "彼が1時間で直した", kw: [["fix", "fixed", "repair", "repaired"], ["1 hour", "an hour", "hour"]], must: "number" },
+      { en: "he fixed it in one hour", ja: "彼が1時間で直した", kw: [["fix", "fixed", "repair", "repaired"], ["1 hour", "an hour", "hour", "60 minutes"]], must: "number" },
       { en: "she gave him ten rolls because she was thankful", ja: "感謝してロールパンを10個あげた", kw: [["10", "roll", "rolls", "bread"], ["thank", "thanked", "thankful", "thanks", "grateful", "happy", "glad", "gave", "give", "given"]], must: "reason" }
     ]
   },
@@ -33,15 +33,15 @@ window.RAW.H = [
     points: [
       { en: "Tom lives in Denver and works at a bank", ja: "トムはデンバーに住み銀行で働いている", kw: [["tom"], ["bank", "denver"]], must: "person" },
       { en: "he missed his train on Wednesday", ja: "水曜日にいつもの電車に乗り遅れた", kw: [["train"], ["miss", "missed", "late", "catch", "caught"]], must: null },
-      { en: "because his alarm didn't ring", ja: "目覚ましが鳴らなかったから", kw: [["alarm", "clock"], ["ring", "rang", "go off", "went off", "didnt work", "not work", "wasnt working", "stopped working", "broke", "broken", "fail", "failed", "sound", "overslept", "oversleep"]], must: "reason" },
+      { en: "because his alarm didn't ring", ja: "目覚ましが鳴らなかったから", kw: [["alarm", "clock"], ["ring", "rang", "go off", "went off", "didnt work", "not work", "wasnt working", "stopped working", "broke", "broken", "fail", "failed", "sound", "overslept", "oversleep", "wake", "woke"]], must: "reason" },
       { en: "he took a taxi but traffic was heavy", ja: "タクシーに乗ったが渋滞していた", kw: [["taxi", "cab", "traffic", "jam"]], must: null },
-      { en: "he arrived 30 minutes late", ja: "30分遅れて着いた", kw: [["30"]], must: "number" },
-      { en: "his boss wasn't angry", ja: "上司は怒らなかった", kw: [["boss", "manager", "supervisor"]], must: null },
+      { en: "he arrived 30 minutes late", ja: "30分遅れて着いた", kw: [["30", "half an hour", "half hour"]], must: "number" },
+      { en: "his boss wasn't angry", ja: "上司は怒らなかった", kw: [["boss", "manager", "supervisor"], ["not angry", "wasnt angry", "didnt get angry", "not mad", "wasnt mad", "fine", "okay", "understood", "forgave", "kind", "nice"]], must: null },
       { en: "he bought a new alarm clock that evening", ja: "その晩、新しい目覚まし時計を買った", kw: [["new", "bought", "buy", "purchased", "got"], ["alarm", "clock"]], must: null }
     ]
   },
   {
-    passage: "Emma's dog, Max, ran out of the house on Saturday because the gate was open. She looked for him in the park for two hours. A kind neighbor called her at six o'clock. He had found Max near the library. Emma was so happy that she closed the gate carefully from then on.",
+    passage: "Emma's dog, Max, ran out of the house on Saturday because the gate was open. She looked for him in the park for two hours. A kind neighbor called her at six o'clock. He had found Max near the library. Emma was very happy, and from then on she always closed the gate carefully.",
     ja: "土曜日、エマの犬マックスは門が開いていたため家から飛び出してしまった。彼女は公園で2時間マックスを探した。6時に親切な近所の人から電話があった。図書館の近くでマックスを見つけてくれたのだ。エマはとても喜び、それからは門をしっかり閉めるようになった。",
     points: [
       { en: "Emma's dog Max ran away on Saturday", ja: "土曜日にエマの犬マックスが逃げ出した", kw: [["emma", "max"], ["dog", "puppy", "pet"]], must: "person" },
@@ -97,8 +97,8 @@ window.RAW.H = [
       { en: "the room was being cleaned, so he couldn't use it", ja: "部屋が清掃中で使えなかった", kw: [["clean", "cleaned", "cleaning", "cleaner", "cleaners"]], must: "reason" },
       { en: "he asked his assistant Nina to find another room", ja: "アシスタントのニーナに別の部屋を頼んだ", kw: [["nina", "assistant", "secretary"]], must: "person" },
       { en: "she booked a small room upstairs", ja: "上の階の小さな部屋を予約した", kw: [["room", "upstairs", "space"], ["book", "booked", "reserve", "reserved", "small", "upstairs", "upper floor"]], must: null },
-      { en: "the meeting started 15 minutes late", ja: "会議は15分遅れで始まった", kw: [["15"]], must: "number" },
-      { en: "but everyone came", ja: "でも全員来た", kw: [["everyone", "everybody", "whole team", "all came", "all the team", "all member", "all members"]], must: null }
+      { en: "the meeting started 15 minutes late", ja: "会議は15分遅れで始まった", kw: [["15", "quarter"]], must: "number" },
+      { en: "but everyone came", ja: "でも全員来た", kw: [["everyone", "everybody", "whole team", "all came", "all the team", "all member", "all members", "all of them", "all attended", "no one missed", "nobody missed"]], must: null }
     ]
   },
   {
@@ -108,9 +108,9 @@ window.RAW.H = [
       { en: "Grace ordered a chocolate cake for her son Ben's birthday", ja: "グレースは息子ベンの誕生日用にチョコケーキを注文した", kw: [["grace", "ben"], ["chocolate", "cake"]], must: "person" },
       { en: "when she picked it up, it was a lemon cake", ja: "受け取るとレモンケーキだった", kw: [["lemon", "wrong", "different"]], must: null },
       { en: "the shop had mixed up two orders", ja: "店が注文を取り違えていた", kw: [["mix", "mixed", "mix up", "wrong", "confuse", "confused", "error", "switch", "switched", "2 order", "2 orders", "another order"]], must: null },
-      { en: "the baker apologized", ja: "パン職人が謝った", kw: [["sorry", "apologize", "apologized", "apologise", "apologised", "apology", "baker"]], must: null },
+      { en: "the baker apologized", ja: "ケーキ職人が謝った", kw: [["sorry", "apologize", "apologized", "apologise", "apologised", "apology"]], must: null },
       { en: "he made a new cake in 40 minutes", ja: "40分で新しいケーキを作った", kw: [["40"]], must: "number" },
-      { en: "he gave it for free because of the mistake", ja: "間違いのお詫びに無料にした", kw: [["free", "nothing", "no money", "no charge", "didnt pay", "not pay", "refund"], ["mistake", "mix", "mixed", "wrong", "error", "sorry"]], must: "reason" }
+      { en: "he gave it for free because of the mistake", ja: "間違いのお詫びに無料にした", kw: [["free", "nothing", "no money", "no charge", "didnt pay", "not pay", "refund", "didnt charge", "not charge", "no cost", "without paying", "didnt have to pay", "not have to pay"], ["mistake", "mix", "mixed", "wrong", "error", "sorry"]], must: "reason" }
     ]
   },
   {
@@ -118,7 +118,7 @@ window.RAW.H = [
     ja: "カルロスは毎日自転車で通学している。月曜日、途中でタイヤがパンクしたので、歩かなければならなかった。クラスメートのミアが彼を見かけて、手伝うと申し出た。彼女が空気入れを貸してくれて、二人は10分でタイヤを直した。カルロスはそれでも授業の5分前に着いた。",
     points: [
       { en: "Carlos rides his bike to school", ja: "カルロスは自転車で通学している", kw: [["carlos"], ["bike", "bicycle", "cycle", "ride", "rides"]], must: "person" },
-      { en: "he got a flat tire, so he had to walk", ja: "パンクしたので歩くことになった", kw: [["flat", "puncture", "punctured", "hole", "broke", "broken", "tire", "tyre"], ["walk", "walked", "push", "pushed", "stop", "stopped", "ride"]], must: "reason" },
+      { en: "he got a flat tire, so he had to walk", ja: "パンクしたので歩くことになった", kw: [["flat", "puncture", "punctured", "hole", "broke", "broken", "tire", "tyre"], ["walk", "walked", "push", "pushed", "stop", "stopped", "on foot"]], must: "reason" },
       { en: "his classmate Mia offered to help", ja: "クラスメートのミアが手伝ってくれた", kw: [["mia", "classmate", "friend"]], must: "person" },
       { en: "she lent him her pump", ja: "空気入れを貸してくれた", kw: [["pump", "air"]], must: null },
       { en: "they fixed it in 10 minutes", ja: "10分で直した", kw: [["10"]], must: "number" },
@@ -138,12 +138,12 @@ window.RAW.H = [
     ]
   },
   {
-    passage: "Sam came home late on Friday night and found he had lost his keys. He could not get in, so he knocked on his neighbor's door. His neighbor, Mrs. Green, had a spare key because Sam gave her one last year. She was still awake at eleven o'clock. Sam got in and found his keys in his car the next morning.",
+    passage: "Sam came home late on Friday night and found he had lost his keys. He could not get in, so he knocked on his neighbor's door. His neighbor, Mrs. Green, had a spare key because Sam had given her one last year. She was still awake at eleven o'clock. Sam got in and found his keys in his car the next morning.",
     ja: "金曜日の夜遅くに帰宅したサムは、鍵をなくしたことに気づいた。家に入れなかったので、隣の家のドアをノックした。隣人のグリーンさんは、去年サムが渡しておいた合鍵を持っていた。彼女は11時でもまだ起きていた。サムは家に入ることができ、翌朝、鍵は車の中で見つかった。",
     points: [
-      { en: "Sam lost his keys on Friday night", ja: "サムは金曜の夜に鍵をなくした", kw: [["sam"], ["lost", "lose", "couldnt find", "forgot", "forget", "didnt have"]], must: "person" },
+      { en: "Sam lost his keys on Friday night", ja: "サムは金曜の夜に鍵をなくした", kw: [["sam"], ["lost", "lose", "couldnt find", "forgot", "forget", "didnt have", "misplaced"]], must: "person" },
       { en: "he couldn't get in, so he went to his neighbor Mrs. Green", ja: "入れないので隣人のグリーンさんを訪ねた", kw: [["green", "neighbor", "neighbour", "next door"]], must: "person" },
-      { en: "she had a spare key because Sam gave her one last year", ja: "去年サムが渡した合鍵を持っていた", kw: [["spare", "extra", "copy", "second", "another", "key"], ["gave", "give", "given", "last year", "before", "earlier"]], must: "reason" },
+      { en: "she had a spare key because Sam gave her one last year", ja: "去年サムが渡した合鍵を持っていた", kw: [["spare", "extra", "copy", "second", "another", "a key", "her key"], ["gave", "give", "given", "last year", "before", "earlier"]], must: "reason" },
       { en: "she was still awake at 11", ja: "11時でもまだ起きていた", kw: [["11"]], must: "number" },
       { en: "he found his keys in his car the next morning", ja: "翌朝、鍵は車の中で見つかった", kw: [["car"]], must: null }
     ]
@@ -173,7 +173,7 @@ window.RAW.H = [
     ]
   },
   {
-    passage: "Mei was waiting for her train when she saw a little boy crying at five o'clock. He was crying because he had lost his mother in the crowd. Mei took him to the information desk, and a staff member made an announcement. His mother soon arrived and thanked Mei many times. Mei missed her train, but she was glad she helped.",
+    passage: "At five o'clock, Mei was waiting for her train when she saw a little boy crying. He was crying because he had lost his mother in the crowd. Mei took him to the information desk, and a staff member made an announcement. His mother soon arrived and thanked Mei many times. Mei missed her train, but she was glad she helped.",
     ja: "メイが電車を待っていると、5時に小さな男の子が泣いているのを見かけた。人混みで母親とはぐれてしまって泣いていたのだ。メイは彼を案内所に連れて行き、係員がアナウンスをした。母親はすぐにやって来て、メイに何度もお礼を言った。メイは電車に乗り遅れたが、助けられてよかったと思った。",
     points: [
       { en: "Mei was waiting for her train", ja: "メイは電車を待っていた", kw: [["mei"], ["wait", "waiting", "waited", "station", "platform"]], must: "person" },
@@ -203,7 +203,7 @@ window.RAW.H = [
       { en: "Fatima had to print copies of a report", ja: "ファティマは報告書を印刷する必要があった", kw: [["fatima"], ["print", "printed", "printing", "copy", "copies", "report"]], must: "person" },
       { en: "she needed 50 copies", ja: "50部必要だった", kw: [["50"]], must: "number" },
       { en: "the meeting was at 9", ja: "会議は9時だった", kw: [["9"]], must: "number" },
-      { en: "the printer stopped because there was no paper", ja: "紙がなくてプリンターが止まった", kw: [["printer", "machine"], ["no paper", "out of paper", "ran out", "run out", "empty", "stop", "stopped", "broke", "broken", "didnt work", "jam", "jammed"]], must: "reason" },
+      { en: "the printer stopped because there was no paper", ja: "紙がなくてプリンターが止まった", kw: [["printer", "machine", "paper"], ["no paper", "out of paper", "ran out", "run out", "empty", "no more paper", "not enough paper", "without paper"]], must: "reason" },
       { en: "her coworker Ken brought more paper", ja: "同僚のケンが紙を持ってきた", kw: [["ken", "coworker", "co worker", "colleague"], ["brought", "bring", "got", "get", "fetch", "fetched", "ran", "run", "found", "more paper", "help", "helped"]], must: "person" },
       { en: "she finished just in time", ja: "ぎりぎり間に合った", kw: [["time", "finish", "finished", "done", "made it", "ready"]], must: null },
       { en: "she bought Ken lunch to thank him", ja: "お礼にケンに昼食をおごった", kw: [["lunch", "meal", "food"]], must: null }
@@ -218,7 +218,7 @@ window.RAW.H = [
       { en: "the total was 40 dollars", ja: "合計は40ドルだった", kw: [["40"]], must: "number" },
       { en: "she only had 10 dollars in cash", ja: "現金は10ドルしかなかった", kw: [["10"]], must: "number" },
       { en: "a man named Mr. Ito offered to pay", ja: "イトウさんという男性が払うと申し出た", kw: [["ito", "man", "stranger", "person", "guy"], ["pay", "paid", "help", "helped"]], must: "person" },
-      { en: "she paid him back because she wanted to be honest", ja: "誠実でありたいので翌日返した", kw: [["honest", "honesty", "fair", "right thing", "owe", "owed", "polite", "kind"]], must: "reason" }
+      { en: "she paid him back because she wanted to be honest", ja: "誠実でありたいので翌日返した", kw: [["honest", "honesty", "fair", "right thing", "owe", "owed", "polite", "kind", "honestly", "be honest", "responsible"]], must: "reason" }
     ]
   },
   {
@@ -227,7 +227,7 @@ window.RAW.H = [
     points: [
       { en: "Kevin had to send a report to his boss", ja: "ケビンは上司に報告書を送る必要があった", kw: [["kevin"], ["report", "file", "document", "work"]], must: "person" },
       { en: "the deadline was 5 on Friday", ja: "締め切りは金曜の5時だった", kw: [["5"]], must: "number" },
-      { en: "at 3 his computer shut down", ja: "3時にパソコンが落ちた", kw: [["3"], ["computer", "pc", "shut", "broke", "broken", "crash", "crashed", "died", "dead"]], must: "number" },
+      { en: "at 3 his computer shut down", ja: "3時にパソコンが落ちた", kw: [["3"], ["computer", "pc", "shut", "broke", "broken", "crash", "crashed", "died", "dead", "stop", "stopped", "turn off", "turned off", "froze", "frozen", "wouldnt turn on"]], must: "number" },
       { en: "he had saved the file online, so he could use another computer", ja: "オンライン保存していたので別のPCで作業できた", kw: [["save", "saved", "online", "cloud", "backup", "backed up", "internet"]], must: "reason" },
       { en: "he used his coworker Rosa's laptop", ja: "同僚ローザのノートPCを借りた", kw: [["rosa", "coworker", "co worker", "colleague"]], must: "person" },
       { en: "he sent it at 4:30", ja: "4時半に送った", kw: [["4 30", "430", "half past 4"]], must: "number" },
@@ -259,7 +259,7 @@ window.RAW.H = [
     ]
   },
   {
-    passage: "Rachel saw her old neighbor, Mr. Kim, carrying heavy shopping bags up the stairs. He was eighty years old, so Rachel offered to help. She carried the bags to his apartment. Mr. Kim invited her in for tea and told her stories about his life. They talked for an hour. Since then, Rachel has visited him every week.",
+    passage: "Rachel saw her elderly neighbor, Mr. Kim, carrying heavy shopping bags up the stairs. He was eighty years old, so Rachel offered to help. She carried the bags to his apartment. Mr. Kim invited her in for tea and told her stories about his life. They talked for an hour. Since then, Rachel has visited him every week.",
     ja: "レイチェルは、年配の隣人キムさんが重い買い物袋を持って階段を上っているのを見かけた。彼は80歳だったので、レイチェルは手伝いを申し出た。彼女は袋を彼の部屋まで運んだ。キムさんは彼女をお茶に招き、自分の人生の話をした。二人は1時間話した。それ以来、レイチェルは毎週彼を訪ねている。",
     points: [
       { en: "Rachel saw her neighbor Mr. Kim", ja: "レイチェルは隣人のキムさんを見かけた", kw: [["rachel"], ["kim", "neighbor", "neighbour", "man"]], must: "person" },
@@ -278,7 +278,7 @@ window.RAW.H = [
       { en: "the game was planned for Saturday at 9", ja: "試合は土曜9時の予定だった", kw: [["9"]], must: "number" },
       { en: "the field was too wet because of rain", ja: "雨でグラウンドがぬかるんでいた", kw: [["rain", "rained", "rainy", "wet", "muddy", "water"]], must: "reason" },
       { en: "he called the other coach Ms. White and moved it to Sunday", ja: "相手コーチのホワイトさんと日曜に変更した", kw: [["white", "other coach", "another coach", "sunday"]], must: "person" },
-      { en: "12 children came", ja: "12人の子どもが来た", kw: [["12"]], must: "number" },
+      { en: "12 children came", ja: "12人の子どもが来た", kw: [["12", "dozen"]], must: "number" },
       { en: "his team won by 2 goals", ja: "2点差で勝った", kw: [["2"], ["goal", "goals", "won", "win", "beat", "point", "points"]], must: "number" },
       { en: "the parents brought snacks", ja: "保護者がお菓子を持ってきた", kw: [["snack", "snacks", "food", "treat", "treats", "party", "celebrate", "celebrated"]], must: null }
     ]
@@ -328,7 +328,7 @@ window.RAW.H = [
       { en: "she was away for 1 week", ja: "1週間留守にした", kw: [["1 week", "a week", "week", "7 days"]], must: "number" },
       { en: "she asked her neighbor Ivan to water her plants", ja: "隣人のイワンに水やりを頼んだ", kw: [["ivan", "neighbor", "neighbour"], ["water", "watered", "watering", "take care", "look after", "looked after", "care"]], must: "person" },
       { en: "because it was very hot", ja: "とても暑かったから", kw: [["hot", "heat", "summer", "dry", "sunny", "warm"]], must: "reason" },
-      { en: "all 12 plants were healthy", ja: "12鉢すべて元気だった", kw: [["12"]], must: "number" },
+      { en: "all 12 plants were healthy", ja: "12鉢すべて元気だった", kw: [["12", "dozen"]], must: "number" },
       { en: "she gave Ivan chocolates to thank him", ja: "お礼にイワンにチョコをあげた", kw: [["chocolate", "chocolates", "candy", "sweets", "gift", "present"]], must: null }
     ]
   },
@@ -350,9 +350,9 @@ window.RAW.H = [
     points: [
       { en: "Owen wanted to take his girlfriend Rina to a concert", ja: "オーウェンは恋人リナをコンサートに誘いたかった", kw: [["owen", "rina"], ["concert", "show", "live", "music"]], must: "person" },
       { en: "because it was her birthday", ja: "彼女の誕生日だったから", kw: [["birthday"]], must: "reason" },
-      { en: "the tickets were sold out", ja: "チケットは売り切れだった", kw: [["sold out", "sell out", "no ticket", "no tickets", "no more", "gone", "none", "couldnt buy", "couldnt get"]], must: null },
+      { en: "the tickets were sold out", ja: "チケットは売り切れだった", kw: [["sold out", "sell out", "no ticket", "no tickets", "no more", "gone", "none", "couldnt buy", "couldnt get", "sold", "full", "unavailable", "not available"]], must: null },
       { en: "his coworker's brother had extra tickets", ja: "同僚の兄（弟）が余りのチケットを持っていた", kw: [["brother", "coworker", "co worker", "colleague", "friend"]], must: null },
-      { en: "there were 2 tickets", ja: "チケットは2枚だった", kw: [["2"]], must: "number" },
+      { en: "there were 2 tickets", ja: "チケットは2枚だった", kw: [["2", "pair"]], must: "number" },
       { en: "he paid 80 dollars", ja: "80ドル払った", kw: [["80"]], must: "number" },
       { en: "Rina was very surprised and happy", ja: "リナはとても驚いて喜んだ", kw: [["surprise", "surprised", "happy", "smile", "smiled", "smiling", "glad", "excited", "pleased"]], must: null }
     ]
