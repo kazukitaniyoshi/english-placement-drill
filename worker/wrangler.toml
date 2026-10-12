@@ -1,0 +1,10 @@
+name = "english-drill-explain"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# 利用回数の記録用（id は `wrangler kv namespace create LIMITS` の結果を入れる）
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "a87a7b20d3f546739fe0afda28f5153d"
+
+# ANTHROPIC_API_KEY と PASSCODE は `wrangler secret put` で登録する。このファイルには書かない
