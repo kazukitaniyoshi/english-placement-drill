@@ -105,6 +105,11 @@ var settings=jget(SK,{rate:1.0});
 var progress=jget(PK,{});
 /* 出題履歴: パートごとに、出した問題IDを古い順に並べたリスト */
 var HK='etp_seen_v1';
+/* AI解説: 中継サーバーのURL（空ならボタンを出さない）。合言葉はこの端末にだけ保存 */
+var AI_URL='https://english-drill-explain.kazuki-taniyoshi.workers.dev/explain';
+var AK='etp_ai_pass';
+function aiPass(){try{return localStorage.getItem(AK)||''}catch(e){return ''}}
+function setAiPass(v){try{if(v)localStorage.setItem(AK,v);else localStorage.removeItem(AK)}catch(e){}}
 var seenLog=jget(HK,{});
 function markSeen(part,id){var a=(seenLog[part]||[]).filter(function(x){return x!==id});a.push(id);seenLog[part]=a;jset(HK,seenLog)}
 
@@ -271,7 +276,9 @@ function home(){
  var mk=progress.mock||{};
  h+='<h3 style="margin-top:18px">模試モード</h3><button class="btn acc" id="mock">模試を始める（全6パート・約25分）</button><p class="mute">'+(mk.count?'前回 '+Math.round(mk.last*100)+'%／'+mk.count+'回':'まだ受けていません')+'　順番: B16問→C10問→D12問→F20問→G16問→H3問</p>';
  h+='<h3 style="margin-top:18px">設定</h3><div class="card"><label>音声の速さ　<select id="rate"><option value="0.9">ゆっくり (0.9)</option><option value="1">ふつう (1.0)</option><option value="1.1">はやい (1.1)</option></select></label><p class="mute" id="voiceinfo"></p><p class="mute">録音・音声認識はスマホの許可が必要です。使えない場合は「言えた」ボタンで進められます。</p></div>';
+ if(AI_URL)h+='<div class="card" style="margin-top:10px"><b>AI解説の合言葉</b><p class="mute" id="aistat">'+(aiPass()?'この端末に保存済みです':'まだ入力されていません')+'</p><input id="aipass" class="gap" type="password" autocomplete="off" style="width:100%;text-align:left" placeholder="合言葉"><button class="btn" id="aisave">保存</button>'+(aiPass()?'<button class="btn ghost" id="aiclear">この端末から消す</button>':'')+'</div>';
  stage.innerHTML=h;
+ if(AI_URL){$('aisave').onclick=function(){var v=$('aipass').value.trim();if(v){setAiPass(v);home()}};if($('aiclear'))$('aiclear').onclick=function(){setAiPass('');home()}}
  $('rate').value=String(settings.rate||1);
  $('rate').onchange=function(){settings.rate=parseFloat(this.value);jset(SK,settings)};
  Array.prototype.forEach.call(stage.querySelectorAll('.part'),function(b){b.onclick=function(){runSession([[b.getAttribute('data-p'),DRILL_N[b.getAttribute('data-p')]]],'drill')}});
@@ -545,6 +552,7 @@ function results(){
   var i=+b.getAttribute('data-i'),r=sess.results[i];r.judge=b.getAttribute('data-sj');
   $('bd'+i).innerHTML=badge(r);$('sum').innerHTML=summaryHtml();persist(false);
  }});
+ Array.prototype.forEach.call(stage.querySelectorAll('[data-ai]'),function(b){b.onclick=function(){aiExplain(+b.getAttribute('data-ai'))}});
  Array.prototype.forEach.call(stage.querySelectorAll('[data-chk]'),function(c){c.onchange=function(){
   var i=+c.getAttribute('data-i'),k=+c.getAttribute('data-chk');sess.results[i].checks[k]=c.checked;
   $('bd'+i).innerHTML=badge(sess.results[i]);$('sum').innerHTML=summaryHtml();persist(false);
@@ -588,10 +596,43 @@ function resultCard(r,i){
   h+='</div><div class="cols"><div><i class="mute">原文</i><div class="pbox">'+esc(it.passage)+'</div><div class="ja">'+esc(it.ja)+'</div></div><div><i class="mute">あなたの文（'+(r.answer?r.answer.split(/\s+/).length:0)+'語）</i><div class="pbox">'+(r.answer?esc(r.answer):'（無回答）')+'</div></div></div>';
  }
  if(r.note)h+='<div class="mute">'+esc(r.note)+'</div>';
+ if(AI_URL)h+='<div class="kv ai" id="ai'+i+'"><button class="btn ghost" data-ai="'+i+'">AIに解説してもらう</button></div>';
  if(r.audioUrl)h+='<div class="kv"><i>あなたの録音</i><audio class="audio" controls src="'+r.audioUrl+'"></audio></div>';
  if(r.part==='F'&&r.judge!=='ok'&&r.answer)h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">自分の答えも正しいので正解にする</button></div>';
  if(r.judge==='unknown')h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">○ 言えた</button><button data-sj="half" data-i="'+i+'">△ 惜しい</button><button data-sj="ng" data-i="'+i+'">× 言えなかった</button></div>';
  return h+'</div>';
+}
+function aiPayload(r){
+ var it=r.item,a=r.answer||'',q,c;
+ if(r.part==='B'){q=it.text;c=it.text}
+ else if(r.part==='C'){q='流れた3つの句（この順番で流れた）: '+it.chunks.join(' / ');c=it.answer}
+ else if(r.part==='D'){q=it.turns.map(function(t){return t.spk+': '+t.text}).join('\n')+'\n質問: '+it.question;c='答えの例: '+it.accepted.slice(0,6).join(' / ')}
+ else if(r.part==='F'){q=it.sentence;c='正解の候補: '+it.accepted.join(', ')}
+ else if(r.part==='G'){q='聞こえた英文を書き取る問題';c=it.text}
+ else{q=it.passage;c='書けていてほしい要点: '+it.points.map(function(p){return p.en}).join(' / ')}
+ return {part:r.part,question:q,correct:c,answer:a};
+}
+async function aiExplain(i){
+ var box=$('ai'+i);if(!box)return;
+ var pass=aiPass();
+ if(!pass){
+  box.innerHTML='<p class="mute">合言葉を入力してください（この端末に保存されます）</p><input id="aip'+i+'" class="gap" type="password" autocomplete="off" style="width:100%;text-align:left"><button class="btn" id="aigo'+i+'">保存して解説</button>';
+  $('aigo'+i).onclick=function(){var v=$('aip'+i).value.trim();if(v){setAiPass(v);aiExplain(i)}};
+  return;
+ }
+ box.innerHTML='<p class="mute">解説を作っています…</p>';
+ var msg;
+ try{
+  var res=await fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json','X-Passcode':pass},body:JSON.stringify(aiPayload(sess.results[i]))});
+  var j={};try{j=await res.json()}catch(e){}
+  if(res.ok&&j.text){box.innerHTML='<i>AIの解説</i><div class="pbox" style="white-space:pre-wrap">'+esc(j.text)+'</div>';return}
+  if(res.status===401){setAiPass('');msg='合言葉が違うようです。もう一度入力してください。'}
+  else if(j.error==='daily_limit')msg='今日の解説の上限に達しました。明日また使えます。';
+  else if(j.error==='locked')msg='合言葉の間違いが続いたため、今日は停止しています。';
+  else msg='解説を取得できませんでした。少し待ってからもう一度お試しください。';
+ }catch(e){msg='通信できませんでした。電波の良い場所でもう一度お試しください。'}
+ box.innerHTML='<p class="mute">'+esc(msg)+'</p><button class="btn ghost" data-ai="'+i+'">もう一度</button>';
+ box.querySelector('[data-ai]').onclick=function(){aiExplain(i)};
 }
 function kv(k,v){return '<div class="kv"><i>'+k+'</i>'+v+'</div>'}
 function ja(t){return t?'<div class="ja">'+esc(t)+'</div>':''}
