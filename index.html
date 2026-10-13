@@ -336,20 +336,26 @@ async function runSpeak(part,item,idx,my){
  if(my!==gen)return null;
  stage.innerHTML='<div class="status">🎧 聞いています…</div>';
  showTimer(false);
- var v0=voiceFor(idx),v1=voiceFor(idx+1);
- if(part==='B'){await speak(item.text,v0)}
- else if(part==='C'){for(var k=0;k<item.chunks.length;k++){if(my!==gen)return null;await speak(item.chunks[k],v0);await sleep(500)}}
- else{
-  var vw=voiceFor(0),vm=pool.length>1?voiceFor(1):vw;
-  var same=vw===vm;
-  for(var t=0;t<item.turns.length;t++){if(my!==gen)return null;var T=item.turns[t];await speak(T.text,T.spk==='W'?vw:vm,same?(T.spk==='W'?1.25:0.75):0);await sleep(300)}
-  if(my!==gen)return null;
-  await speak(item.question,voiceFor(2),0);
- }
+ await playItem(part,item,idx,function(){return my===gen});
  if(my!==gen)return null;
  var a=await answerPhase(PT[part].grace,PT[part].limit,my);
  if(my!==gen)return null;
- return judgeSpeak(part,item,a);
+ var r=judgeSpeak(part,item,a);r.vi=idx;return r;
+}
+
+/* 問題の音声を流す（本番と解説の再生で共通）。alive()がfalseになったら途中で止める */
+var GAP_C=120,GAP_D=80; // 句・発話の間（ms）。合成音声は発話ごとに立ち上がりの間が入るので短めでOK
+async function playItem(part,item,vi,alive){
+ if(part==='B'){await speak(item.text,voiceFor(vi))}
+ else if(part==='C'){for(var k=0;k<item.chunks.length;k++){if(!alive())return;if(k)await sleep(GAP_C);await speak(item.chunks[k],voiceFor(vi))}}
+ else if(part==='D'){
+  var vw=voiceFor(0),vm=pool.length>1?voiceFor(1):vw;
+  var same=vw===vm;
+  for(var t=0;t<item.turns.length;t++){if(!alive())return;var T=item.turns[t];if(t)await sleep(GAP_D);await speak(T.text,T.spk==='W'?vw:vm,same?(T.spk==='W'?1.25:0.75):0)}
+  if(!alive())return;
+  await sleep(GAP_D);await speak(item.question,voiceFor(2),0);
+ }
+ else if(part==='G'){await speak(item.text,voiceFor(vi*2+1))}
 }
 
 function answerPhase(grace,limit,my){
@@ -428,7 +434,7 @@ async function runG(item,idx,my){
  await waitTap('<div class="card"><h2>準備はいいですか？</h2><p>英文を1回だけ聞いて、そのまま入力します。</p><p class="mute">音声は1回だけです。</p></div>','▶ 開始');
  if(my!==gen)return null;
  stage.innerHTML='<div class="status">🎧 聞いています…</div>';showTimer(false);
- await speak(item.text,voiceFor(idx*2+1));
+ await playItem('G',item,idx,function(){return my===gen});
  if(my!==gen)return null;
  return new Promise(function(resolve){
   stage.innerHTML='<div class="card"><p class="mute">聞こえた文を入力</p><textarea id="gin" class="txt" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" style="min-height:90px"></textarea></div><button class="btn" id="ok">次へ（Enter）</button>';
@@ -437,7 +443,7 @@ async function runG(item,idx,my){
    if(fin)return;fin=true;stopTimer();onAbort=null;
    var raw=inp.value.trim(),ref=canon(item.text),hyp=canon(raw),ops=diff(ref,hyp);
    var rate=rateOf(ops,ref.length);
-   var r={part:'G',item:item,answer:raw,ops:ops,rate:rate,exact:raw.replace(/[’‘]/g,"'").replace(/\s+/g,' ')===item.text,judge:rate>=1?'ok':rate>=0.7?'half':'ng'};
+   var r={part:'G',item:item,vi:idx,answer:raw,ops:ops,rate:rate,exact:raw.replace(/[’‘]/g,"'").replace(/\s+/g,' ')===item.text,judge:rate>=1?'ok':rate>=0.7?'half':'ng'};
    resolve(r);
   }
   onAbort=function(){fin=true;stopTimer()};
@@ -555,6 +561,7 @@ function results(){
   $('bd'+i).innerHTML=badge(r);$('sum').innerHTML=summaryHtml();persist(false);
  }});
  Array.prototype.forEach.call(stage.querySelectorAll('[data-ai]'),function(b){b.onclick=function(){aiExplain(+b.getAttribute('data-ai'))}});
+ Array.prototype.forEach.call(stage.querySelectorAll('[data-play]'),function(b){b.onclick=function(){replay(b)}});
  aiAuto();
  Array.prototype.forEach.call(stage.querySelectorAll('[data-chk]'),function(c){c.onchange=function(){
   var i=+c.getAttribute('data-i'),k=+c.getAttribute('data-chk');sess.results[i].checks[k]=c.checked;
@@ -563,6 +570,7 @@ function results(){
 }
 function resultCard(r,i){
  var it=r.item,h='<div class="card res"><div class="hd"><strong>Q'+(i+1)+'（'+r.part+'）</strong><span id="bd'+i+'">'+badge(r)+'</span></div>';
+ if(HAS_TTS&&/[BCDG]/.test(r.part))h+='<button class="btn ghost small" data-play="'+i+'">▶ 問題の音声をもう一度聞く</button>';
  var startTxt=(typeof r.startSec==='number')?r.startSec.toFixed(1)+' 秒':'—';
  if(r.part==='B'){
   h+=kv('正解の文',esc(it.text)+ja(it.ja));
@@ -604,6 +612,19 @@ function resultCard(r,i){
  if(r.part==='F'&&r.judge!=='ok'&&r.answer)h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">自分の答えも正しいので正解にする</button></div>';
  if(r.judge==='unknown')h+='<div class="sj"><button data-sj="ok" data-i="'+i+'">○ 言えた</button><button data-sj="half" data-i="'+i+'">△ 惜しい</button><button data-sj="ng" data-i="'+i+'">× 言えなかった</button></div>';
  return h+'</div>';
+}
+/* 解説画面での再生。再生中にもう一度押すと停止、別の問題を押すとそちらに切り替え */
+var playTok=0,playBtn=null;
+var PLAY_LABEL='▶ 問題の音声をもう一度聞く';
+async function replay(b){
+ var wasMe=playBtn===b;
+ playTok++;try{speechSynthesis.cancel()}catch(e){}
+ if(playBtn){playBtn.textContent=PLAY_LABEL;playBtn=null}
+ if(wasMe)return;
+ var tok=playTok,g=gen,r=sess.results[+b.getAttribute('data-play')];
+ playBtn=b;b.textContent='■ 停止';
+ await playItem(r.part,r.item,r.vi||0,function(){return tok===playTok&&g===gen});
+ if(tok===playTok){b.textContent=PLAY_LABEL;playBtn=null}
 }
 function aiPayload(r){
  var it=r.item,a=r.answer||'',q,c;
