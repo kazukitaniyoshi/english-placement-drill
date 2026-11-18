@@ -18,7 +18,7 @@ FEMALE = ["Kore", "Aoede", "Leda", "Zephyr"]
 MALE = ["Puck", "Charon", "Orus", "Fenrir"]
 MIXED = [v for p in zip(FEMALE, MALE) for v in p]
 NARRATOR = "Iapetus"
-GAP_MS = 7000          # リクエスト間隔（無料枠の1分あたり上限よけ）
+GAP_MS = int(os.environ.get("GAP_MS", "7000"))  # リクエスト間隔（無料枠の1分あたり上限よけ）
 MAX_PER_RUN = int(os.environ.get("MAX_PER_RUN", "1000"))
 
 def log(*a):
@@ -152,7 +152,7 @@ def publish(n_new, total, all_count):
     if n_new == 0: return
     subprocess.run(["git", "-C", ROOT, "add", "audio"], check=True)
     subprocess.run(["git", "-C", ROOT, "commit", "-q", "-m", f"お手本音声を{n_new}本追加（計{total}/{all_count}）\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"], check=True)
-    subprocess.run(["git", "-C", ROOT, "pull", "-q", "--rebase", "origin", "main"], check=True)
+    subprocess.run(["git", "-C", ROOT, "pull", "-q", "--rebase", "--autostash", "origin", "main"], check=True)
     subprocess.run(["git", "-C", ROOT, "push", "-q", "origin", "main"], check=True)
     log("公開しました", n_new, "本追加")
 
