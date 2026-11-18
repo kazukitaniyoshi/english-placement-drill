@@ -167,7 +167,9 @@ var HAS_TTS=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window
 var pool=[];
 var NOVELTY=/\b(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Junior|Ralph|Fred|Kathy|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley)\b/i;
 var PREF=['Samantha','Daniel','Karen','Moira','Tessa','Rishi','Aman','Tara','Google US English','Google UK English Female','Google UK English Male','Microsoft Aria Online (Natural)','Microsoft Jenny Online (Natural)','Microsoft Guy Online (Natural)','Microsoft Ryan Online (Natural)','Microsoft Sonia Online (Natural)','Alex','Ava','Allison','Susan','Tom','Zoe','Evan','Nathan','Oliver','Serena','Kate','Stephanie','Lee','Matilda'];
-var MALE=/Daniel|Rishi|Aman|Alex\b|Tom\b|Evan|Nathan|Oliver|Lee\b|Male|Guy|Ryan/i;
+var MALE=/\b(Daniel|Rishi|Aman|Alex|Tom|Evan|Nathan|Oliver|Lee|Aaron|Arthur|Gordon|Malcolm|Male|Guy|Ryan|Andrew|Brian|Christopher|Eric|Roger|Steffan|Davis|Tony|Jason|Liam|William|Thomas|Mark|David|George|James|Richard|Sean|Connor|Mitchell|Prabhat|Wayne|Luke|Neil|Kenneth)\b/i;
+var FEMALE=/\b(Samantha|Karen|Moira|Tessa|Tara|Ava|Allison|Susan|Zoe|Serena|Kate|Stephanie|Matilda|Catherine|Martha|Nicky|Female|Aria|Jenny|Sonia|Emma|Michelle|Libby|Natasha|Clara|Hazel|Zira|Heera|Neerja|Veena|Fiona|Victoria|Siri Female)\b/i;
+var vFemale=null,vMale=null;
 function prefRank(v){var n=v.name.toLowerCase(),best=-1;for(var i=0;i<PREF.length;i++){if(n.indexOf(PREF[i].toLowerCase())>=0){best=i;break}}
  if(best<0)return -1;return best*2+(/enhanced|premium/i.test(v.name)?0:1)}
 function loadVoices(){
@@ -177,7 +179,10 @@ function loadVoices(){
  var seen={};en=en.filter(function(v){if(seen[v.name])return false;seen[v.name]=1;return true});
  var ranked=en.map(function(v){return{v:v,r:prefRank(v)}}).filter(function(o){return o.r>=0}).sort(function(a,b){return a.r-b.r}).map(function(o){return o.v});
  if(!ranked.length){var us=en.filter(function(v){return /^en[-_](US|GB)/i.test(v.lang)});ranked=us.length?us:en}
- var f=null,m=null;ranked.forEach(function(v){if(MALE.test(v.name)){if(!m)m=v}else if(!f)f=v});
+ var f=null,m=null;ranked.forEach(function(v){if(MALE.test(v.name)){if(!m)m=v}else if(FEMALE.test(v.name)){if(!f)f=v}});
+ if(!m)en.forEach(function(v){if(!m&&MALE.test(v.name))m=v});
+ if(!f)en.forEach(function(v){if(!f&&FEMALE.test(v.name))f=v});
+ vFemale=f;vMale=m;
  pool=(f&&m)?[f,m].concat(ranked.filter(function(v){return v!==f&&v!==m})):ranked;
  var el=$('voiceinfo');if(el)el.textContent=pool.length?('英語音声 '+pool.length+' 種を検出: '+pool.slice(0,4).map(function(v){return v.name}).join(', ')):'英語音声が見つかりません（端末の設定を確認）';
 }
@@ -349,7 +354,8 @@ async function playItem(part,item,vi,alive){
  if(part==='B'){await speak(item.text,voiceFor(vi))}
  else if(part==='C'){for(var k=0;k<item.chunks.length;k++){if(!alive())return;if(k)await sleep(GAP_C);await speak(item.chunks[k],voiceFor(vi))}}
  else if(part==='D'){
-  var vw=voiceFor(0),vm=pool.length>1?voiceFor(1):vw;
+  /* 男女は名前で判定できた声だけを使う。判定できない側は、もう一方の声の高さを変えて代用する（男性役に女性の声を当てない） */
+  var vw=vFemale||vMale||voiceFor(0),vm=vMale||vw;
   var same=vw===vm;
   for(var t=0;t<item.turns.length;t++){if(!alive())return;var T=item.turns[t];if(t)await sleep(GAP_D);await speak(T.text,T.spk==='W'?vw:vm,same?(T.spk==='W'?1.25:0.75):0)}
   if(!alive())return;
