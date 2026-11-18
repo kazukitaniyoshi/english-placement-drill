@@ -7,9 +7,13 @@
 """
 import os, sys, json, time, base64, wave, hashlib, subprocess, urllib.request, urllib.error, datetime
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUD = os.path.join(ROOT, "audio")
-MODEL = "gemini-2.5-flash-preview-tts"
+# 無料枠はモデルごとに別。上から順に使い、1日の上限に当たったら次のモデルへ
+MODELS = os.environ.get("MODELS", "gemini-2.5-flash-preview-tts,gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-3.8-flash-lite-tts").split(",")
+STYLED = {"gemini-2.5-flash-preview-tts"}   # 指示文つきで読ませられるモデル（他は指示文まで読んでしまうので本文だけ渡す）
+exhausted = set()
 FEMALE = ["Kore", "Aoede", "Leda", "Zephyr"]
 MALE = ["Puck", "Charon", "Orus", "Fenrir"]
 MIXED = [v for p in zip(FEMALE, MALE) for v in p]
@@ -38,12 +42,12 @@ def load_items():
 def jobs():
     R = load_items(); out = []
     for i, b in enumerate(R["B"]):
-        out.append(("B", "B|" + b[0], f"Say in a natural, friendly American voice with lively intonation: {b[0]}", MIXED[i % 8], None, b[0]))
+        out.append(("B", "B|" + b[0], f"Say in a natural, friendly American voice with lively intonation: {b[0]}", MIXED[i % 8], None, b[0], b[0]))
     for i, g in enumerate(R["G"]):
-        out.append(("G", "G|" + g[0], f"Say in a natural, everyday voice with lively intonation: {g[0]}", MIXED[(i * 3 + 1) % 8], None, g[0]))
+        out.append(("G", "G|" + g[0], f"Say in a natural, everyday voice with lively intonation: {g[0]}", MIXED[(i * 3 + 1) % 8], None, g[0], g[0]))
     for i, c in enumerate(R["C"]):
         ph = " ... ".join(x.rstrip(".") + "." for x in c[0])
-        out.append(("C", "C|" + "|".join(c[0]), f"Say each phrase separately in a natural American voice, with a short pause between them: {ph}", MIXED[(i * 5 + 2) % 8], None, " ".join(c[0])))
+        out.append(("C", "C|" + "|".join(c[0]), f"Say each phrase separately in a natural American voice, with a short pause between them: {ph}", MIXED[(i * 5 + 2) % 8], None, " ".join(c[0]), list(c[0])))
     for i, d in enumerate(R["D"]):
         first = "Woman" if d[0] == "W" else "Man"; other = "Man" if first == "Woman" else "Woman"
         names = [first, other, first]
@@ -51,13 +55,13 @@ def jobs():
         sp = [("Woman", FEMALE[i % 4]), ("Man", MALE[(i + 1) % 4])]
         out.append(("D", "D|" + d[0] + "|" + "|".join(d[1]),
                     "TTS the following conversation between Woman and Man, sounding like real people chatting, with natural, lively intonation:\n" + conv,
-                    None, sp, " ".join(d[1])))
-        out.append(("D", "Q|" + d[2], f"Say in a calm, clear American voice: {d[2]}", NARRATOR, None, d[2]))
+                    None, sp, " ".join(d[1]), [(dict(sp)[n], t) for n, t in zip(names, d[1])]))
+        out.append(("D", "Q|" + d[2], f"Say in a calm, clear American voice: {d[2]}", NARRATOR, None, d[2], d[2]))
     return out
 
 class Quota(Exception): pass
 
-def call(key, prompt, voice, speakers):
+def call(key, prompt, voice, speakers, MODEL):
     if speakers:
         sc = {"multiSpeakerVoiceConfig": {"speakerVoiceConfigs": [{"speaker": s, "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": v}}} for s, v in speakers]}}
     else:
@@ -84,13 +88,49 @@ def call(key, prompt, voice, speakers):
             log("通信エラー", e, "→ 再試行"); time.sleep(20); continue
     raise RuntimeError("再試行しても失敗")
 
+SIL = b"\x00\x00"
+def gap(sec): return SIL * int(24000 * sec)
+
+def trim_pcm(pcm):
+    """前後の無音を落とす。句や発話をつなぐ前に使う"""
+    import array
+    a = array.array("h", pcm); th = 400; n = len(a)
+    i = 0
+    while i < n and abs(a[i]) < th: i += 1
+    j = n - 1
+    while j > i and abs(a[j]) < th: j -= 1
+    i = max(0, i - 1200); j = min(n, j + 2400)
+    return a[i:j].tobytes()
+
+def synth(key, job):
+    """使えるモデルで音声(PCM)を作る。全モデルが上限なら Quota"""
+    part, k, prompt, voice, speakers, text, plain = job
+    for m in MODELS:
+        if m in exhausted: continue
+        try:
+            if m in STYLED:
+                return call(key, prompt, voice, speakers, m), m
+            # 指示文なしモデル：本文だけ。C は句ごと、D の会話は発話ごとに作ってつなぐ
+            if part == "C" and isinstance(plain, list):
+                segs = [trim_pcm(call(key, x.rstrip(".") + ".", voice, None, m)) for x in plain]
+                return gap(0.9).join(segs), m
+            if isinstance(plain, list):
+                segs = [trim_pcm(call(key, t, v, None, m)) for v, t in plain]
+                return gap(0.45).join(segs), m
+            return call(key, plain, voice, None, m), m
+        except Quota:
+            log("上限:", m, "→ 次のモデルへ"); exhausted.add(m)
+    raise Quota("全モデルが今日の上限")
+
 def encode(pcm, out):
     tmp = out + ".wav"
     w = wave.open(tmp, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm); w.close()
     # 前後の無音を削る（アプリは再生が終わってから回答タイマーを始めるため）
     af = "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.15,areverse"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", tmp, "-af", af, "-ac", "1", "-ar", "24000", "-b:a", "48k", out], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", tmp, "-af", af, "-ac", "1", "-ar", "24000", "-b:a", "64k", out], check=True)
     os.remove(tmp)
+    from normalize_audio import normalize
+    normalize(out)   # スマホのスピーカーでも聞こえる音量に揃える
     return float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", out]).strip())
 
 def plausible(dur, text, part):
@@ -122,18 +162,23 @@ def main():
     key = api_key(); todo = [j for j in jobs() if (not only or j[0] in only)]
     all_count = len(jobs())
     made = 0; failed = []
-    for part, k, prompt, voice, speakers, text in todo:
+    for job in todo:
+        part, k, prompt, voice, speakers, text, plain = job
         out = os.path.join(AUD, fname(part, k))
         if os.path.exists(out): continue
         if made >= MAX_PER_RUN: break
         try:
             ok = False
             for t in range(2):
-                dur = encode(call(key, prompt, voice, speakers), out)
+                pcm, used = synth(key, job)
+                dur = encode(pcm, out)
                 time.sleep(GAP_MS / 1000)
                 if plausible(dur, text, part): ok = True; break
                 log("長さが不自然", f"{dur:.1f}秒", k[:60], "→ 作り直し"); os.remove(out)
-            if ok: made += 1; log("OK", part, f"{dur:.1f}秒", k[:60])
+            if ok:
+                mp = os.path.join(AUD, "models.json"); md = json.load(open(mp)) if os.path.exists(mp) else {}
+                md[os.path.basename(out)] = used; json.dump(md, open(mp, "w"), indent=0, sort_keys=True)
+            if ok: made += 1; log("OK", part, used.replace("gemini-", ""), f"{dur:.1f}秒", k[:60])
             else: failed.append(k)
         except Quota as e:
             log("今日の無料枠の上限に達しました。明日続きから作ります。", str(e)[:120]); break
