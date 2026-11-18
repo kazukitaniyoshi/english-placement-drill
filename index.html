@@ -79,6 +79,7 @@ select{font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line)
 <script src="data/partF.js"></script>
 <script src="data/partH.js"></script>
 <script src="items.js"></script>
+<script src="audio/manifest.js"></script>
 <script>
 (function(){
 'use strict';
@@ -189,7 +190,32 @@ function loadVoices(){
 if(HAS_TTS){loadVoices();try{speechSynthesis.addEventListener('voiceschanged',loadVoices)}catch(e){speechSynthesis.onvoiceschanged=loadVoices}}
 function voiceFor(i){return pool.length?pool[((i%pool.length)+pool.length)%pool.length]:null}
 var unlocked=false;
-function unlock(){if(unlocked||!HAS_TTS)return;unlocked=true;try{var u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+/* お手本音声（MP3）。audio/manifest.js にあるものはMP3、ないものは端末の読み上げで流す */
+var AUDIO=window.AUDIO||{};
+var clipEl=new Audio();clipEl.preload='auto';
+var SILENT='audio/silence.mp3',clipDone=null;
+function unlock(){if(unlocked)return;unlocked=true;
+ try{clipEl.src=SILENT;var pr=clipEl.play();if(pr&&pr.catch)pr.catch(function(){})}catch(e){}
+ if(!HAS_TTS)return;try{var u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+function stopClip(){try{clipEl.pause()}catch(e){}if(clipDone){var d=clipDone;clipDone=null;d()}}
+function playClip(file){
+ return new Promise(function(res){
+  var fin=false,to;
+  function end(){if(fin)return;fin=true;clearTimeout(to);clipEl.onended=clipEl.onerror=null;res(true)}
+  function fail(){if(fin)return;fin=true;clearTimeout(to);clipEl.onended=clipEl.onerror=null;res(false)}
+  clipEl.onended=end;clipEl.onerror=fail;clipDone=end;
+  clipEl.src='audio/'+file;
+  try{clipEl.playbackRate=settings.rate||1}catch(e){}
+  to=setTimeout(end,20000);
+  try{var pr=clipEl.play();if(pr&&pr.catch)pr.catch(fail)}catch(e){fail()}
+ });
+}
+/* MP3があれば流し、なければ（または再生に失敗したら）端末の読み上げで流す */
+async function say(key,text,voice,pitch){
+ var f=AUDIO[key];
+ if(f&&await playClip(f))return;
+ await speak(text,voice,pitch);
+}
 ['pointerdown','touchend','click'].forEach(function(ev){document.addEventListener(ev,unlock,{passive:true})});
 function speak(text,voice,pitch){
  return new Promise(function(res){
@@ -251,6 +277,7 @@ function abort(){
  gen++;stopTimer();showTimer(false);
  if(onAbort){try{onAbort()}catch(e){}onAbort=null}
  if(HAS_TTS){try{speechSynthesis.cancel()}catch(e){}}
+ stopClip();
  releaseMic();
 }
 function setHead(sub){$('sub').textContent=sub||'';$('quit').hidden=!sub}
@@ -351,17 +378,20 @@ async function runSpeak(part,item,idx,my){
 /* 問題の音声を流す（本番と解説の再生で共通）。alive()がfalseになったら途中で止める */
 var GAP_C=120,GAP_D=80; // 句・発話の間（ms）。合成音声は発話ごとに立ち上がりの間が入るので短めでOK
 async function playItem(part,item,vi,alive){
- if(part==='B'){await speak(item.text,voiceFor(vi))}
+ if(part==='B'){await say('B|'+item.text,item.text,voiceFor(vi))}
+ else if(part==='C'&&AUDIO['C|'+item.chunks.join('|')]){await say('C|'+item.chunks.join('|'),item.chunks.join('. '),voiceFor(vi))}
  else if(part==='C'){for(var k=0;k<item.chunks.length;k++){if(!alive())return;if(k)await sleep(GAP_C);await speak(item.chunks[k],voiceFor(vi))}}
  else if(part==='D'){
   /* 男女は名前で判定できた声だけを使う。判定できない側は、もう一方の声の高さを変えて代用する（男性役に女性の声を当てない） */
+  var dk='D|'+item.turns[0].spk+'|'+item.turns.map(function(t){return t.text}).join('|');
+  if(AUDIO[dk]&&await playClip(AUDIO[dk])){if(!alive())return;await sleep(GAP_D);await say('Q|'+item.question,item.question,voiceFor(2),0);return}
   var vw=vFemale||vMale||voiceFor(0),vm=vMale||vw;
   var same=vw===vm;
   for(var t=0;t<item.turns.length;t++){if(!alive())return;var T=item.turns[t];if(t)await sleep(GAP_D);await speak(T.text,T.spk==='W'?vw:vm,same?(T.spk==='W'?1.25:0.75):0)}
   if(!alive())return;
-  await sleep(GAP_D);await speak(item.question,voiceFor(2),0);
+  await sleep(GAP_D);await say('Q|'+item.question,item.question,voiceFor(2),0);
  }
- else if(part==='G'){await speak(item.text,voiceFor(vi*2+1))}
+ else if(part==='G'){await say('G|'+item.text,item.text,voiceFor(vi*2+1))}
 }
 
 function answerPhase(grace,limit,my){
@@ -624,7 +654,7 @@ var playTok=0,playBtn=null;
 var PLAY_LABEL='▶ 問題の音声をもう一度聞く';
 async function replay(b){
  var wasMe=playBtn===b;
- playTok++;try{speechSynthesis.cancel()}catch(e){}
+ playTok++;try{speechSynthesis.cancel()}catch(e){}stopClip();
  if(playBtn){playBtn.textContent=PLAY_LABEL;playBtn=null}
  if(wasMe)return;
  var tok=playTok,g=gen,r=sess.results[+b.getAttribute('data-play')];
