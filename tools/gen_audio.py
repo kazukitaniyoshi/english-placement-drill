@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUD = os.path.join(ROOT, "audio")
 # 無料枠はモデルごとに別。上から順に使い、1日の上限に当たったら次のモデルへ
-MODELS = os.environ.get("MODELS", "gemini-2.5-flash-preview-tts,gemini-3.1-flash-tts-preview,gemini-3.8-flash-tts,gemini-3.8-flash-lite-tts").split(",")
-STYLED = {"gemini-2.5-flash-preview-tts"}   # 指示文つきで読ませられるモデル（他は指示文まで読んでしまうので本文だけ渡す）
+MODELS = os.environ.get("MODELS", "gemini-2.5-flash-preview-tts,gemini-2.5-pro-preview-tts,gemini-3.1-flash-tts-preview")  # 3.8系は末尾に雑音が入るので使わない.split(",")
+STYLED = {"gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"}   # 指示文つきで読ませられるモデル（他は指示文まで読んでしまうので本文だけ渡す）
 exhausted = set()
 FEMALE = ["Kore", "Aoede", "Leda", "Zephyr"]
 MALE = ["Puck", "Charon", "Orus", "Fenrir"]
@@ -160,21 +160,25 @@ def main():
     os.makedirs(AUD, exist_ok=True)
     only = [a for a in sys.argv[1:] if not a.startswith("--")]
     key = api_key(); todo = [j for j in jobs() if (not only or j[0] in only)]
+    kp = os.environ.get("KEYPREFIX")  # 例: D| で会話だけ、Q| で質問だけ
+    if kp: todo = [j for j in todo if j[1].startswith(kp)]
     all_count = len(jobs())
     made = 0; failed = []
     for job in todo:
         part, k, prompt, voice, speakers, text, plain = job
         out = os.path.join(AUD, fname(part, k))
-        if os.path.exists(out): continue
+        redo = set(filter(None, os.environ.get("REDO_MODELS", "gemini-3.8-flash-tts,gemini-3.8-flash-lite-tts").split(",")))
+        mp = os.path.join(AUD, "models.json"); md = json.load(open(mp)) if os.path.exists(mp) else {}
+        if os.path.exists(out) and md.get(os.path.basename(out)) not in redo: continue   # 3.8系（雑音あり）で作った分は作り直す
         if made >= MAX_PER_RUN: break
         try:
             ok = False
             for t in range(2):
                 pcm, used = synth(key, job)
-                dur = encode(pcm, out)
+                dur = encode(pcm, out + ".new.mp3")
                 time.sleep(GAP_MS / 1000)
-                if plausible(dur, text, part): ok = True; break
-                log("長さが不自然", f"{dur:.1f}秒", k[:60], "→ 作り直し"); os.remove(out)
+                if plausible(dur, text, part): ok = True; os.replace(out + ".new.mp3", out); break
+                log("長さが不自然", f"{dur:.1f}秒", k[:60], "→ 作り直し"); os.remove(out + ".new.mp3")
             if ok:
                 mp = os.path.join(AUD, "models.json"); md = json.load(open(mp)) if os.path.exists(mp) else {}
                 md[os.path.basename(out)] = used; json.dump(md, open(mp, "w"), indent=0, sort_keys=True)
@@ -184,7 +188,7 @@ def main():
             log("今日の無料枠の上限に達しました。明日続きから作ります。", str(e)[:120]); break
         except Exception as e:
             log("失敗", k[:60], e); failed.append(k)
-            if os.path.exists(out): os.remove(out)
+            if os.path.exists(out + ".new.mp3"): os.remove(out + ".new.mp3")
     total = manifest()
     log(f"今回 {made} 本作成／合計 {total}/{all_count} 本／失敗 {len(failed)} 本")
     if "--publish" in sys.argv: publish(made, total, all_count)
