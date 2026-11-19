@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUD = os.path.join(ROOT, "audio")
 # 無料枠はモデルごとに別。上から順に使い、1日の上限に当たったら次のモデルへ
-MODELS = os.environ.get("MODELS", "gemini-2.5-flash-preview-tts,gemini-2.5-pro-preview-tts,gemini-3.1-flash-tts-preview")  # 3.8系は末尾に雑音が入るので使わない.split(",")
+MODELS = os.environ.get("MODELS", "gemini-2.5-flash-preview-tts,gemini-2.5-pro-preview-tts,gemini-3.1-flash-tts-preview").split(",")  # 3.8系は末尾に雑音が入るので使わない
 STYLED = {"gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"}   # 指示文つきで読ませられるモデル（他は指示文まで読んでしまうので本文だけ渡す）
 exhausted = set()
 FEMALE = ["Kore", "Aoede", "Leda", "Zephyr"]
