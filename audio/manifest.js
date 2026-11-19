@@ -272,5 +272,11 @@ window.AUDIO={
 "D|W|Why are you taking the stairs?|The elevator is out of order.|Oh, I didn't know that.": "D-c6201efa61.mp3",
 "D|M|How much is a ticket to the museum?|It's twelve dollars for adults.|And for children?": "D-ede5d235de.mp3",
 "D|W|Who will take care of your dog while you're away?|My neighbor will feed him every day.|That's kind of them.": "D-3a292c6934.mp3",
-"D|M|What did the doctor say?|I need to rest for a few days.|Then stay home and relax.": "D-8d4a78c8f6.mp3"
+"D|M|What did the doctor say?|I need to rest for a few days.|Then stay home and relax.": "D-8d4a78c8f6.mp3",
+"D|W|Where should we meet tomorrow?|How about the cafe in front of the station?|Perfect. See you there.": "D-ee92b4cebe.mp3",
+"D|M|Did you call the client back?|Yes, she wants to move the meeting to next week.|Okay, I'll update the calendar.": "D-1ebe6ecdac.mp3",
+"D|W|How many people are coming to dinner?|Six, including us.|Then I'll set the table for six.": "D-f95dab2d5b.mp3",
+"D|M|Why did you buy so many apples?|I'm going to bake an apple pie.|Can I have a piece?": "D-2eace03241.mp3",
+"D|W|What's the weather going to be like tomorrow?|The news said it will rain all day.|I'll bring my umbrella then.": "D-a1a51a91b2.mp3",
+"D|M|Which floor is the meeting room on?|It's on the fifth floor, next to the kitchen.|Thanks. I'll take the elevator.": "D-7987991790.mp3"
 };
