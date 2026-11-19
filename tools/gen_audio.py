@@ -192,7 +192,9 @@ def main():
     total = manifest()
     log(f"今回 {made} 本作成／合計 {total}/{all_count} 本／失敗 {len(failed)} 本")
     if "--publish" in sys.argv: publish(made, total, all_count)
-    if total >= all_count: open(os.path.join(AUD, ".done"), "w").write("done\n")
+    md = json.load(open(os.path.join(AUD, "models.json")))
+    left_redo = [f for f, m in md.items() if m in ("gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts")]
+    if total >= all_count and not left_redo: open(os.path.join(AUD, ".done"), "w").write("done\n")
 
 if __name__ == "__main__":
     main()
